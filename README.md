@@ -1,1 +1,1 @@
-NBodySolver
+ODESolver
