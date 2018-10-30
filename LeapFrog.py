@@ -4,16 +4,18 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : LeapFrog.py
     # Creation Date : Son 28 Okt 2018 15:41:12 CET
-    # Last Modified : Mon 29 Okt 2018 01:03:51 CET
+    # Last Modified : Die 30 Okt 2018 14:36:45 CET
     # Description : Implement leapfrog algorithm
 """
 #==============================================================================
 
 import math
-import numpy as np
+import json
 
+import numpy as np
 import matplotlib.pyplot as plt
 
+from pprint import pprint
 from numpy.linalg import norm
 from collections import deque
 
@@ -162,41 +164,52 @@ class N_Body_Gravitation_LF():
         return individual_pot_energies.sum()
 
 if __name__ == "__main__":
-    AU = 149.6e9
-    r_init = np.array([
-        [0., 0.],
-        [-1*AU, 0.],
-        ], dtype=np.float)
-    v_init = np.array([
-        [0., 0.],
-        [0., 29.783*1000],
-        ], np.float)
-    masses = np.array([1.98892e30, 5.9742e24])
 
-    dt = 60*60*24
+    with open("./initial.json", "r") as f:
+        initials = json.load(f)
+
+    masses = []
+    r_init = []
+    v_init = []
+    colors = []
+
+    for key, value in initials.items():
+        if key in ["Sun", "Earth", "Jupiter", "Mars"]:
+            masses.append(value["mass"])
+            r_init.append(value["r_init"][:2])
+            v_init.append(value["v_init"][:2])
+            colors.append(value["color"])
+
+    masses = np.array(masses); r_init = np.array(r_init); v_init = np.array(v_init)
+    r_max = np.max(r_init)
+
     initials = {
             "r": r_init,
             "v": v_init,
             "m": masses
             }
+    pprint(initials)
+    dt = 60*60*24
 
     leapfrog = N_Body_Gravitation_LF(dt, initials, verbose=False)
 
-    positions, velocities, timesteps, energies, forces = leapfrog.evolve(steps=180, saveOnly=None)
-    positions, velocities, timesteps, energies, forces = leapfrog.evolve(steps=180, saveOnly=20)
-    positions, velocities, timesteps, energies, forces = leapfrog.evolve(steps=10, saveOnly=50)
-    positions, velocities, timesteps, energies, forces = leapfrog.evolve(steps=100)
+    positions, velocities, timesteps, energies, forces = leapfrog.evolve(steps=365, saveOnly=None)
 
     fig = plt.figure()
+    fig.tight_layout()
+    ax = plt.axes(xlim=(-r_max, r_max), ylim=(-r_max, r_max))
+    ax.set_facecolor("k")
+    ax.axis("off")
+    fig.patch.set_facecolor("k")
     for i, (position, force) in enumerate(zip(positions, forces)):
         if i % 1 == 0:
             xs = position[:, 0]
             ys = position[:, 1]
-            plt.scatter(xs, ys, color=["b", "r", "y"])
+            plt.scatter(xs, ys, color=colors)
 
-            fxs = force[1, 0]/1e12
-            fys = force[1, 1]/1e12
-            plt.arrow(xs[1], ys[1], fxs, fys)
+            # fxs = force[1, 0]/1e12
+            # fys = force[1, 1]/1e12
+            # plt.arrow(xs[1], ys[1], fxs, fys)
 
         if i % 500 == 0:
             print(i, "/", len(timesteps))
