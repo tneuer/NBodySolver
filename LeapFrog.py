@@ -49,15 +49,16 @@ class N_Body_Gravitation_LF():
                 - "m": masses of the bodies
         """
         self.dt = dt
-        self.pos = initials["r"]
-        self.vel = initials["v"]
-        self.mas = initials["m"]
+        self.pos = initials["r_init"]
+        self.vel = initials["v_init"]
+        self.mas = initials["masses"]
         self.mass_matrix = self.mas.reshape((1, -1, 1))*self.mas.reshape((-1, 1, 1))
         self.G = 6.67428e-11
         self.alreadyRun = False
         self.verbose = verbose
+        self.dim = self.pos.shape[1]
 
-    def evolve(self, steps, t_end=None, saveOnly=None):
+    def evolve(self, steps, t_end=None, saveOnly=None, mass_sun=None):
         """ Evolves the system according to the potential.
 
         Either steps XOR t_end is needed.
@@ -120,6 +121,12 @@ class N_Body_Gravitation_LF():
             self.acc = self.get_next_acc()
             self.vel = self.vel + 0.5 * self.acc * self.dt
 
+        if mass_sun is not None:
+            sun_index = np.argmax(self.mas)
+            self.mas[sun_index] = mass_sun
+            self.mass_matrix = self.mas.reshape((1, -1, 1))*self.mas.reshape((-1, 1, 1))
+
+
         for step in range(steps):
             # Actual calulation: Leapfrog
             self.pos = self.pos + self.vel * self.dt
@@ -143,7 +150,7 @@ class N_Body_Gravitation_LF():
         return self.posCollect, self.velCollect, self.timesteps, self.energies, self.forces
 
     def get_relative_distances(self):
-        disps = self.pos.reshape((1, -1, 2)) - self.pos.reshape((-1, 1, 2))
+        disps = self.pos.reshape((1, -1, self.dim)) - self.pos.reshape((-1, 1, self.dim))
         dists = norm(disps, axis=2)
         dists[dists == 0] = np.inf # Avoid divide by zero warnings
         return disps, dists
@@ -152,11 +159,11 @@ class N_Body_Gravitation_LF():
         forces = self.G*self.disps*self.mass_matrix/np.expand_dims(self.dists, 2)**3
         forces_per_particle = forces.sum(axis=1)
         self.forces.append(forces_per_particle)
-        return forces_per_particle/masses.reshape(-1, 1)
+        return forces_per_particle/self.mas.reshape(-1, 1)
 
     def get_kinetic_energy_of_system(self):
         velocities_squared = (self.vel**2).sum(axis=1)
-        individual_kin_energies = velocities_squared * masses
+        individual_kin_energies = velocities_squared * self.mas
         return individual_kin_energies.sum()
 
     def get_potential_energy_of_system(self):

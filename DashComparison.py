@@ -4,11 +4,12 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : DashComparison.py
     # Creation Date : Mon 29 Okt 2018 15:20:38 CET
-    # Last Modified : Die 30 Okt 2018 17:15:46 CET
+    # Last Modified : Die 30 Okt 2018 22:49:50 CET
     # Description : Compares the results of the NBodySolvers for comparison.
 """
 #==============================================================================
 
+import os
 import time
 import dash
 import json
@@ -19,18 +20,24 @@ import plotly.graph_objs as go
 import dash_core_components as dcc
 import dash_html_components as html
 
-
+from shutil import copyfile
 from colour import Color
 from collections import deque
 from dash.dependencies import Input, Output, Event, State
 
 from LeapFrog import N_Body_Gravitation_LF
 
-DT = 60*60*24
+DT = 60*60*24*4
 M_SUN = 1.98892e30
 CLICKS_START = 0
 CLICKS_RESET = 0
 SOLVER = {}
+DEFAULTPLANETS = ["earth", "venus", "mercury"]
+INITIALS = 0
+
+if not os.path.exists("./user_initials.json"):
+    copyfile("./default_initial.json", "./user_initials.json")
+
 
 app = dash.Dash("vehicle_data")
 
@@ -57,9 +64,9 @@ app.layout = html.Div([
                     {'label': "Jupiter", 'value': "jupiter"},
                     {'label': "Saturn", 'value': "saturn"},
                     {'label': "Uranus", 'value': "uranus"},
-                    {'label': "Neptun", 'value': "neptun"},
+                    {'label': "Neptune", 'value': "neptune"},
                     ],
-                value=['earth', 'venus'],
+                value=DEFAULTPLANETS,
                 multi=True,
                 style={"marginTop": "50px"}
                 )),
@@ -70,33 +77,33 @@ app.layout = html.Div([
             html.Div([
                 html.Div([
                     html.Div("Bodyname", style={"textAlign": "center"}),
-                    html.Div("x-init [AU]", style={"textAlign": "center", "marginTop": "30px"}),
-                    html.Div("y-init [AU]", style={"textAlign": "center", "marginTop": "30px"}),
-                    html.Div("z-init [AU]", style={"textAlign": "center", "marginTop": "30px"}),
-                    html.Div("Colour [HTML]", style={"textAlign": "center", "marginTop": "30px"})
+                    html.Div("x-init [AU]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("y-init [AU]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("z-init [AU]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("Colour [HTML]", style={"textAlign": "center", "marginTop": "3px"})
                     ],
                     className="three columns"),
                 html.Div([
-                    dcc.Input(id="bodyname", style={"padding": "0px"}, value="Custom1"),
-                    dcc.Input(id="xpos", style={"padding": "0px"}),
-                    dcc.Input(id="ypos", style={"padding": "0px"}, value=0),
-                    dcc.Input(id="zpos", style={"padding": "0px"}, value=0),
-                    dcc.Input(id="pcolor", style={"padding": "0px"}),
+                    dcc.Input(id="bodyname", style={"width": "90%", "padding": "0px"}, value="Custom1"),
+                    dcc.Input(id="xpos", style={"width": "90%", "padding": "0px"}),
+                    dcc.Input(id="ypos", style={"width": "90%", "padding": "0px"}, value=0),
+                    dcc.Input(id="zpos", style={"width": "90%", "padding": "0px"}, value=0),
+                    dcc.Input(id="pcolor", style={"width": "90%", "padding": "0px"}),
                     ],
                     className="three columns"),
                 html.Div([
-                    html.Div("Bodymass [kg]", style={"textAlign": "center"}),
-                    html.Div("vx-init [AU]", style={"textAlign": "center", "marginTop": "30px"}),
-                    html.Div("vy-init [m/s]", style={"textAlign": "center", "marginTop": "30px"}),
-                    html.Div("vz-init [m/s]", style={"textAlign": "center", "marginTop": "30px"}),
+                    html.Div("Bodymass [kg]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("vx-init [AU]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("vy-init [m/s]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("vz-init [m/s]", style={"textAlign": "center", "marginTop": "3px"}),
                     html.Button(id="AddPlanet", children="AddPlanet", style={"marginTop": "30px"})
                     ],
                     className="three columns"),
                 html.Div([
-                    dcc.Input(id="bodymass", style={"padding": "0px"}),
-                    dcc.Input(id="xvel", style={"padding": "0px"}, value=0),
-                    dcc.Input(id="yvel", style={"padding": "0px"}),
-                    dcc.Input(id="zvel", style={"padding": "0px"}, value=0),
+                    dcc.Input(id="bodymass", style={"width": "90%", "padding": "0px"}),
+                    dcc.Input(id="xvel", style={"width": "90%", "padding": "0px"}, value=0),
+                    dcc.Input(id="yvel", style={"width": "90%", "padding": "0px"}),
+                    dcc.Input(id="zvel", style={"width": "90%", "padding": "0px"}, value=0),
                     ],
                     className="three columns"),
                 ],
@@ -109,19 +116,21 @@ app.layout = html.Div([
     html.Div([
         html.Div("Solver", style={"marginTop": "10px"}),
         dcc.Checklist(
+            id = "Solver",
             options=[
-                {"label": "Leapfrog", "value": "lf"},
-                {"label": "Euler", "value": "em"},
-                {"label": "Runge-Kutta 2", "value": "rk2"},
-                {"label": "Runge-Kutta 4", "value": "rk4"},
+                {"label": "Leapfrog", "value": "LF"},
+                {"label": "Euler", "value": "EM"},
+                {"label": "Runge-Kutta 2", "value": "RK2"},
+                {"label": "Runge-Kutta 4", "value": "RK4"},
                 ],
-            values = ["lf", "rk2"],
-            labelStyle={
+            values = ["LF"],
+            labelStyle= {
                 "display": "inline-block",
-                "width": "200px"
+                "width": "200px",
                 }
             ),
         ]),
+
 
     html.Div(
         children=html.Div(id='graphs'),
@@ -137,12 +146,11 @@ app.layout = html.Div([
         html.Button(id="reset", children="Reset", className="two columns"),
         html.Div(dcc.Slider(
             id="sun_mass",
-            marks={i: "{}".format(10**i) for i in range(-3,4)},
-            min=-3,
-            max=3,
+            marks={i: "{}".format(np.round(10**i, 2)) for i in np.arange(-0.9, 0.9, 0.3)},
+            min=-1,
+            max=1,
             value=0,
-            step=0.01,
-            updatemode="drag"
+            step=0.2,
             ), className="four columns"),
         html.Div(children="Timestep", className="one column"),
         html.Div(dcc.Input(
@@ -173,7 +181,6 @@ app.layout = html.Div([
     )
 
 external_css = [
-        "https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css",
         'https://codepen.io/chriddyp/pen/bWLwgP.css',
         ]
 for css in external_css:
@@ -189,7 +196,9 @@ for js in external_css:
         [Input("start_stop", "n_clicks"), Input("reset", "n_clicks")],
         [State("start_stop", "children")])
 def change_start_to_stop_Button(clicks_start, clicks_reset, status):
+    global RUNNING
     if status == "Stop" or clicks_start is None:
+        RUNNING = False
         button = html.Button(
             id="start_stop",
             children="Start",
@@ -198,6 +207,7 @@ def change_start_to_stop_Button(clicks_start, clicks_reset, status):
         return button
 
     else:
+        RUNNING = True
         button = html.Button(
             id="start_stop",
             children="Stop",
@@ -216,6 +226,8 @@ def change_start_to_stop_Button(clicks_start, clicks_reset, status):
         State("pcolor", "value")]
         )
 def update_dropdown_planets(clicks, values, options, *args):
+    global INITIALS
+
     correct_planet_format = transform_user_planet_input(args)
     if correct_planet_format:
         name = correct_planet_format["name"]
@@ -231,6 +243,7 @@ def update_dropdown_planets(clicks, values, options, *args):
         )
 
     return dropdown_menu
+
 
 def transform_user_planet_input(user_input):
     planet_info = {}
@@ -257,19 +270,22 @@ def transform_user_planet_input(user_input):
 @app.callback(
         Output("graph-update", "interval"),
         [Input("start_stop", "n_clicks"), Input("reset", "n_clicks")],
-        [State("start_stop", "children"), State("graph-update", "interval")]
+        [State("start_stop", "children"), State("graph-update", "interval"),
+        State("dd_planets", "value")]
         )
-def control_Animation(start_clicks, reset_clicks, start_button_status, interval):
-    global CLICKS_START, CLICKS_RESET, SOLVER, DT
-
+def control_Animation(start_clicks, reset_clicks, start_button_status, interval, planets):
+    global CLICKS_START, CLICKS_RESET, SOLVER, DT, R_MAX_INIT, R_MAX, INITIALS
     if start_clicks is not None:
         CLICKS_START = start_clicks
-        interval = 100 if interval==1e8 else 1e8
+        interval = 200 if interval==1e8 else 1e8
     elif reset_clicks is not None and CLICKS_RESET-reset_clicks:
         CLICKS_RESET = reset_clicks
         interval= 1e8
-        SOLVER = {"LF": N_Body_Gravitation_LF(DT)}
-
+        INITIALS = read_initials_from_json("./user_initials.json", planets+["sun"])
+        R_MAX = np.max(INITIALS["r_init"])
+        R_MAX = 1.05 * R_MAX
+        R_MAX_INIT = R_MAX
+        SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
 
     return interval
 
@@ -277,59 +293,191 @@ def control_Animation(start_clicks, reset_clicks, start_button_status, interval)
 @app.callback(
         Output("graphs", "children"),
         [Input("dd_planets", "value"), Input("sun_mass", "value"),
-        Input("timestep", "value"), Input("drag", "value")],
+        Input("timestep", "value"), Input("drag", "value"), Input("reset", "n_clicks")],
+        [State("start_stop", "n_clicks"), State("Solver", "values")],
         events=[Event("graph-update", "interval")]
         )
-def update_graphs(planets, sun_mass, timestep, drag):
-    global CLICKS_START
+def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_start, ode_solvers):
+    global CLICKS_START, SOLVER, INITIALS, R_MAX, ENERGY_MAX, VALID_DRAG, RUNNING, GRAPHS, R_MAX_INIT
     sun_mass = transform_sun_mass(sun_mass)
+    graphs = []
 
-    print("Started")
+    try:
+        VALID_DRAG = int(drag)
+    except (ValueError, TypeError):
+        pass
 
-    # planet_trajectories = graphs.append(html.Div(dcc.Graph(
-    #         id=data_name,
-    #         animate=True,
-    #         figure={'data': [data],'layout' : go.Layout(xaxis=dict(range=[min(times),max(times)]),
-    #                                                     yaxis=dict(range=[min(data_dict[data_name]),max(data_dict[data_name])]),
-    #                                                     margin={'l':50,'r':1,'t':45,'b':1},
-    #                                                     title='{}'.format(data_name))}
-    #         ), className=class_choice))
+    if CLICKS_START != 0:
+        if RUNNING:
+            for solver in ode_solvers:
+                results  = SOLVER[solver].evolve(steps=1, saveOnly=VALID_DRAG, mass_sun=sun_mass)
+                positions = np.array(results[0])
+                velocities = results[1]
+                timesteps = results[2]
+                try:
+                    energies = np.abs(np.array(results[3]).sum(axis=1))
+                except:
+                    print(results)
+                forces = results[4]
+                max_pos = np.max(positions)
+                if max_pos > R_MAX:
+                    R_MAX = max_pos
+                    R_MAX = 1.05 * R_MAX
+                scale_for_escaping = R_MAX_INIT / R_MAX
+                INITIALS["sizes"][0] = (np.log10(sun_mass/5.97e24)+10)*1.2
+                INITIALS["scaled_sizes"] = INITIALS["sizes"] * scale_for_escaping
+                days = np.round(timesteps[-1]/(3600 * 24), 2)
+                years = np.round(days/365,2)
+    else:
+        INITIALS = read_initials_from_json("./user_initials.json", planets+["sun"])
+        R_MAX_INIT = np.max(INITIALS["r_init"])
+        R_MAX = R_MAX_INIT
+        R_MAX = 1.05 * R_MAX_INIT
+        SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
+        positions = np.array([INITIALS["r_init"]])
+        days = 0
+        years = 0
+        timesteps= [0]
+        energies = [0]
+        INITIALS["scaled_sizes"] = INITIALS["sizes"]
+        ENERGY_MAX = 0
 
-    return None
+    if n_clicks_reset is not None:
+        reset_clicked = bool(n_clicks_reset - CLICKS_RESET)
+    else:
+        reset_clicked = False
 
+    if reset_clicked:
+        print("RESET")
+        R_MAX_INIT = np.max(INITIALS["r_init"])
+        R_MAX = R_MAX_INIT
+        R_MAX = 1.05 * R_MAX_INIT
+        SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
+        positions = np.array([INITIALS["r_init"]])
+        days = 0
+        years = 0
+        timesteps= [0]
+        energies = [0]
+        INITIALS["scaled_sizes"] = INITIALS["sizes"]
+        ENERGY_MAX = 0
+
+    if RUNNING or CLICKS_START==0 or reset_clicked:
+        traj_data = []
+        energ_data = []
+        for i, name in enumerate(INITIALS["names"]):
+            traj_data.append(go.Scatter(
+                x = positions[:, i, 0],
+                y = positions[:, i, 1],
+                name = name,
+                marker = {
+                    "size": INITIALS["scaled_sizes"][i],
+                    "color": INITIALS["colors"][i]
+                    }
+                ))
+
+        if np.max(energies) > ENERGY_MAX:
+            ENERGY_MAX = np.max(energies)
+
+        energ_data.append(go.Bar(
+            x = [0],
+            y = [energies[-1]],
+            name = "LF",
+            ))
+
+
+        planet_trajectories = html.Div(dcc.Graph(
+                id="trajectories",
+                figure={
+                    'data': traj_data,
+                    'layout' : go.Layout(
+                        xaxis=dict(
+                            range=(-R_MAX, R_MAX),
+                            showgrid=False,
+                            zeroline=False,
+                            showline=False,
+                            ticks="",
+                            showticklabels=False
+                            ),
+                        yaxis=dict(
+                            range=(-R_MAX, R_MAX),
+                            showgrid=False,
+                            zeroline=False,
+                            showline=False,
+                            ticks="",
+                            showticklabels=False
+                            ),
+                        margin={'l':50,'r':1,'t':45,'b':1},
+                        paper_bgcolor="#000000",
+                        plot_bgcolor="#000000",
+                        title='{} days / {} years'.format(days, years))
+                }
+                ), className="eight columns")
+
+        planet_energies = html.Div(dcc.Graph(
+                id="energies",
+                figure={
+                    'data': energ_data,
+                    'layout' : go.Layout(
+                        xaxis=dict(
+                            range=(0, 3),
+                            ),
+                        yaxis=dict(
+                            range=(0, ENERGY_MAX),
+                            ),
+                        margin={'l':50,'r':1,'t':45,'b':1},
+                        title='Energies')
+                }
+                ), className="four columns")
+
+        GRAPHS = html.Div([
+                    planet_trajectories,
+                    planet_energies,
+                    ],
+                    className="row"
+                )
+
+    return GRAPHS
 
 def transform_sun_mass(sun_mass_scale):
     return M_SUN  * 10**sun_mass_scale
 
 
-def read_json_to_correct_input(jsonpath, planets):
+def read_initials_from_json(jsonpath, planets=None):
 
     with open(jsonpath, "r") as f:
         initials = json.load(f)
 
-    masses = []
-    r_init = []
-    v_init = []
-    colors = []
+    names = []; masses = []; r_init = []; v_init = []; colors = []; sizes = []
+
+    if planets is None:
+        planets = list(initials.keys())
 
     for key, value in initials.items():
         if key in planets:
+            names.append(key)
             masses.append(value["mass"])
-            r_init.append(value["r_init"][:2])
-            v_init.append(value["v_init"][:2])
+            r_init.append(value["r_init"])
+            v_init.append(value["v_init"])
             colors.append(value["color"])
+            rel_to_earth = value["mass"]/5.97e24
+            logvalue = np.log10(rel_to_earth)
+            markersize = logvalue if  logvalue>0 else -1/(logvalue-1)
+            sizes.append((markersize+10)*1.2)
 
-    masses = np.array(masses); r_init = np.array(r_init); v_init = np.array(v_init)
+    masses = np.array(masses); r_init = np.array(r_init); v_init = np.array(v_init);
+    sizes = np.array(sizes)
 
     initials = {
-            "r": r_init,
-            "v": v_init,
-            "m": masses
+            "names": names,
+            "r_init": r_init,
+            "v_init": v_init,
+            "masses": masses,
+            "colors": colors,
+            "sizes": sizes
             }
 
-    print(initials)
+    return initials
 
-    return masses, r_init, v_init, colors
 
 
 
