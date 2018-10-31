@@ -18,11 +18,11 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
 
 
-![Energies](/home/tneuer/Algorithmen/NBodySolver/Energies_500k.png)
+![Energies](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Energies_500k.png "Energies after 500k iterations and timestep 2 days")
 
 
 
-![Trajectories](/home/tneuer/Algorithmen/NBodySolver/Trajectories_500k.png)
+![Trajectories](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Trajectories_500k.png)
 
 
 
