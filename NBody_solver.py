@@ -4,18 +4,24 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : NBody_solver.py
     # Creation Date : Mit 31 Okt 2018 08:42:46 CET
-    # Last Modified : Mit 31 Okt 2018 22:03:00 CET
+    # Last Modified : Mit 31 Okt 2018 22:38:23 CET
     # Description : Superclass for all other integrators whic mainly handles initialization.
 """
 #==============================================================================
 
+import os
 import json
+import matplotlib
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from numpy.linalg import norm
 from collections import deque
+
+matplotlib.rcParams["axes.labelsize"] = 40
+matplotlib.rcParams["axes.titlesize"] = 20
+matplotlib.rcParams["text.color"] = "#AFFFF2"
 
 class N_Body_Gravitationsolver():
     """ Provides general interface for initialization, plotting and saving data.
@@ -350,7 +356,7 @@ class N_Body_Gravitationsolver():
         if self.verbose and self.calledSave % 10000 == 0:
             print(self.calledSave, "/", self.steps)
 
-    def plot_trajectories(self, show=True, draw_forces=False, draw_energies=False):
+    def plot_trajectories(self, show=True, draw_forces=False, draw_energies=False, save=False):
         """ Plots the trajectories of all bodies in the system.
 
         The length of the drag can be chosen during the "evolve" vall with parameter
@@ -366,6 +372,9 @@ class N_Body_Gravitationsolver():
         draw_energies : bool [False]
             If True, an additional plot with energies is shown. The fig return is then a
             list of plt.figures and the ax return a list of plt.axes
+        save : bool
+            If true the files are saved as "./Figures/Trajectories_method_steps.png" and
+            "./Figures/Energies_method_steps.png"
 
         Returns
         -------
@@ -378,13 +387,26 @@ class N_Body_Gravitationsolver():
         r_max = np.max(self.posCollect)
         startDay = np.round(self.timesteps[0]/(60*60*24), 2)
         endDay = np.round(self.timesteps[-1]/(60*60*24), 2)
-        startYear = np.round(startDay/365, 2); endYear = np.round(endDay/365, 2)
+        startYear = np.round(startDay/365, 2)
+        endYear = np.round(endDay/365, 2)
 
-        fig = plt.figure()
-        fig.patch.set_facecolor("k")
-        ax = plt.axes(xlim=(-r_max, r_max), ylim=(-r_max, r_max))
-        ax.set_facecolor("k")
-        ax.axis("off")
+        ####
+        # Setup trajectory plot
+        ####
+        fig_trajectories = plt.figure(figsize=(30,20))
+        fig_trajectories.tight_layout()
+        fig_trajectories.patch.set_facecolor("k")
+        ax_trajectories = plt.gca()
+        ax_trajectories.grid()
+        ax_trajectories.axis("off")
+        ax_trajectories.set_facecolor("k")
+        ax_trajectories.set_xlim(-r_max, r_max)
+        ax_trajectories.set_ylim(-r_max, r_max)
+        ax_trajectories.set_title(
+                    "Days: {} - {} | Years: {} - {} | Stepsize {}".format(
+                    startDay, endDay, startYear, endYear, self.dt),
+                    color="#AFFFF2"
+                    )
         if draw_forces:
             if isinstance(draw_forces, list):
                 planet_indices = np.where(np.isin(self.names, draw_forces))[0]
@@ -392,13 +414,17 @@ class N_Body_Gravitationsolver():
             else:
                 planet_indices = list(range(self.n_bodies))
                 max_force = np.max(self.forces)
+            ax_trajectories.plot([0], [0],
+                        color="w",
+                        label="forces",
+                        linestyle="solid")
 
         for i in range(self.n_bodies):
             xs = np.array(self.posCollect)[:, i, 0]
             ys = np.array(self.posCollect)[:, i, 1]
             if len(self.timesteps) < 20 or self.names[i] in ["sun", "Sun"]:
                 msizes = self.sizes[i] * 3
-                plt.plot(xs, ys,
+                ax_trajectories.plot(xs, ys,
                         color=self.colors[i],
                         marker="o",
                         markersize=msizes,
@@ -406,7 +432,7 @@ class N_Body_Gravitationsolver():
                         )
             else:
                 lwidths = self.sizes[i] * 3
-                plt.plot(xs, ys,
+                ax_trajectories.plot(xs, ys,
                         color=self.colors[i],
                         linewidth=lwidths,
                         linestyle="dashed",
@@ -421,37 +447,81 @@ class N_Body_Gravitationsolver():
 
                         fx_scaled = fx / max_force * r_max * 0.1
                         fy_scaled = fy / max_force * r_max * 0.1
-                        plt.arrow(xs[t], ys[t], fx_scaled, fy_scaled, color="w")
+                        ax_trajectories.arrow(xs[t], ys[t], fx_scaled, fy_scaled, color="w")
 
-        plt.plot([0], [0], color="w", label="forces", linestyle="solid")
-        plt.legend(loc=2, bbox_to_anchor=(0.9, 1.15))
-        plt.title(
-                "Day: {} - {} | Year: {} - {}".format(
-                    startDay, endDay, startYear, endYear),
-                color="#AFFFF2"
-                )
+
+        ####
+        # Set trajectory plot legend and title
+        ####
+        legend = ax_trajectories.legend(loc=2, bbox_to_anchor=(0.9, 1.15), fontsize=20)
+        plt.setp(legend.get_texts(), color="k")
+
+        figs = [fig_trajectories]
+        ax = [ax_trajectories]
+
+
 
         if draw_energies:
-            fig = [fig]; ax = [ax]
+            ####
+            # Setup energy plot
+            ####
+            fig_energies = plt.figure(figsize=(30,20))
+            fig_energies.tight_layout()
+            ax_energies = plt.gca()
+            ax_energies.grid()
+            ax_energies.set_xlabel("Time [kDays / Years]")
+            ax_energies.set_ylabel("Energy [Joule]")
             total_energies = self.energies.sum(axis=0)
+            timesteps = np.round(np.array(self.timesteps)/(60*60*24), 2)
 
-            f = plt.figure()
-            f.tight_layout()
-            a = plt.gca()
-            plt.grid()
-            plt.plot(np.round(np.array(self.timesteps)/(60*60*24), 2),
+            ax_energies.plot(
+                    timesteps,
                     total_energies,
                     marker="o",
                     linestyle="dashed")
-            plt.xlabel("Time [days]")
-            plt.ylabel("Energy [Joule]")
 
-            fig.append(f); ax.append(a)
+            # Include initial energy and legend into energy plot
+            ax_energies.axhline(
+                    y=total_energies[0],
+                    color="red",
+                    linestyle="dashed",
+                    linewidth=3
+                    )
+            xticks_values = np.linspace(timesteps[0], timesteps[-1], 10).astype(int)
+            xticks_labels = [
+                    "{} / {}".format(np.round(t/1000, 2), np.round(t/365, 1))
+                    for t in xticks_values
+                    ]
+            yticks_labels = ["{}".format(e) for e in ax_energies.get_xticks()]
+            ax_energies.set_xticks(xticks_values)
+            ax_energies.set_xticklabels(xticks_labels, fontsize=15)
+            ax_energies.set_yticklabels(yticks_labels, fontsize=20)
+            legend = ax_energies.legend(fontsize=30)
+            plt.setp(legend.get_texts(), color="k")
+
+            figs.append(fig_energies); ax.append(ax_energies)
+
+        if save:
+            filepath_traj = "./Figures/Trajectories_{}_{}.png".format(self.__class__, self.steps)
+
+            if os.path.exists(filepath_traj):
+                os.remove(filepath_traj)
+            fig_trajectories.savefig(
+                    filepath_traj,
+                    facecolor=fig_trajectories.get_facecolor(),
+                    bbox_inches="tight")
+
+            if draw_energies:
+                filepath_ener = "./Figures/Energies_{}_{}.png".format(self.__class__, self.steps)
+
+                if os.path.exists(filepath_ener):
+                    os.remove(filepath_ener)
+                fig_energies.savefig(filepath_ener, bbox_inches="tight")
 
         if show:
             plt.show()
 
-        return fig, ax
+        return figs, ax
 
 
 if __name__ == "__main__":

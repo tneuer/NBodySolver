@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : RungeKutta2.py
     # Creation Date : Mit 31 Okt 2018 16:13:04 CET
-    # Last Modified : Mit 31 Okt 2018 22:03:21 CET
+    # Last Modified : Mit 31 Okt 2018 22:41:07 CET
     # Description :
 """
 #==============================================================================
@@ -79,10 +79,8 @@ class N_Body_Gravitation_RK2(N_Body_Gravitationsolver):
 if __name__ == "__main__":
     dt = 60*60*24
     RK2 = N_Body_Gravitation_RK2(dt, "./default_initial_short.json", verbose=True)
-
-    results = RK2.evolve(steps=1000, saveOnly=None)
-
-    RK2.plot_trajectories(draw_forces=False, draw_energies=False, show=True)
+    results = RK2.evolve(steps=365, saveOnly=270)
+    RK2.plot_trajectories(draw_forces=True, draw_energies=False, show=True, save=True)
 
 
 

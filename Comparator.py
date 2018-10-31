@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : Comparator.py
     # Creation Date : Mit 31 Okt 2018 18:56:14 CET
-    # Last Modified : Mit 31 Okt 2018 22:00:04 CET
+    # Last Modified : Mit 31 Okt 2018 22:23:22 CET
     # Description : Compares different solvers which inherit from NBody_solver
 """
 #==============================================================================
@@ -167,7 +167,6 @@ class Comparator():
         # Define axis for trajectories plot
         ax_trajectories.set_xlim(-r_max, r_max)
         ax_trajectories.set_ylim(-r_max, r_max)
-        ax_trajectories.legend(loc=2, bbox_to_anchor=(0.72, 1.15), fontsize=20)
         ax_trajectories.set_title(
                     "Days: {} - {} | Years: {} - {} | Stepsize {}".format(
                     timesteps[0], timesteps[-1],
@@ -179,8 +178,8 @@ class Comparator():
         plt.setp(legend.get_texts(), color="k")
 
         if save:
-            filepath_traj = "Trajectories_{}_{}.png".format("_".join(names), self.steps)
-            filepath_ener = "Energies_{}_{}.png".format("_".join(names), self.steps)
+            filepath_traj = "./Figures/Trajectories_{}_{}.png".format("_".join(names), self.steps)
+            filepath_ener = "./Figures/Energies_{}_{}.png".format("_".join(names), self.steps)
 
             if os.path.exists(filepath_traj):
                 os.remove(filepath_traj)

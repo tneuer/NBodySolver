@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : RungeKutta4.py
     # Creation Date : Mit 31 Okt 2018 18:42:26 CET
-    # Last Modified : Mit 31 Okt 2018 22:03:44 CET
+    # Last Modified : Mit 31 Okt 2018 22:18:27 CET
     # Description : Implementation of Runge-Kutta 4
 """
 #==============================================================================
@@ -101,17 +101,5 @@ class N_Body_Gravitation_RK4(N_Body_Gravitationsolver):
 if __name__ == "__main__":
     dt = 60*60*24
     RK4 = N_Body_Gravitation_RK4(dt, "./default_initial_short.json", verbose=True)
-
     results = RK4.evolve(steps=365, saveOnly=270)
-
-    RK4.plot_trajectories(draw_forces=True, draw_energies=False, show=True)
-
-
-
-
-
-
-
-
-
-
+    figs = RK4.plot_trajectories(draw_forces=True, draw_energies=True, show=True, save=True)

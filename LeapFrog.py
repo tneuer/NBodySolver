@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : LeapFrog.py
     # Creation Date : Son 28 Okt 2018 15:41:12 CET
-    # Last Modified : Mit 31 Okt 2018 16:11:25 CET
+    # Last Modified : Mit 31 Okt 2018 22:40:50 CET
     # Description : Implement leapfrog algorithm
 """
 #==============================================================================
@@ -72,8 +72,6 @@ class N_Body_Gravitation_LF(N_Body_Gravitationsolver):
 if __name__ == "__main__":
     dt = 60*60*24
     leapfrog = N_Body_Gravitation_LF(dt, "./default_initial_short.json", verbose=True)
-
-    results = leapfrog.evolve(steps=1000, saveOnly=None)
-
-    leapfrog.plot_trajectories(draw_forces=True, draw_energies=True, show=True)
+    results = leapfrog.evolve(steps=365, saveOnly=270)
+    leapfrog.plot_trajectories(draw_forces=True, draw_energies=False, show=True, save=True)
 
