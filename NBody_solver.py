@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : NBody_solver.py
     # Creation Date : Mit 31 Okt 2018 08:42:46 CET
-    # Last Modified : Mit 31 Okt 2018 19:18:03 CET
+    # Last Modified : Mit 31 Okt 2018 22:03:00 CET
     # Description : Superclass for all other integrators whic mainly handles initialization.
 """
 #==============================================================================
@@ -293,10 +293,15 @@ class N_Body_Gravitationsolver():
         return disps, dists
 
 
-    def get_next_acc(self):
+    def get_next_acc(self, save=True):
         """ Calculate the acceleration at the current position of each particle
         The forces are calculated on the fly if needed and immediately stored.
 
+        Arguments
+        ---------
+        save : bool
+            If true, the force is stored. For many algorithms the force is calculated
+            at intermediate steps which should not be saved.
         Returns
         -------
             Acceleration on every particle in each of the given dimensions.
@@ -304,7 +309,8 @@ class N_Body_Gravitationsolver():
         """
         forces = self.G*self.disps*self.mass_matrix/np.expand_dims(self.dists, 2)**3
         forces_per_particle = forces.sum(axis=1)
-        self.forces.append(forces_per_particle)
+        if save:
+            self.forces.append(forces_per_particle)
 
         return forces_per_particle/self.mas.reshape(-1, 1)
 

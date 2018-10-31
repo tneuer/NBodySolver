@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : RungeKutta2.py
     # Creation Date : Mit 31 Okt 2018 16:13:04 CET
-    # Last Modified : Mit 31 Okt 2018 18:40:48 CET
+    # Last Modified : Mit 31 Okt 2018 22:03:21 CET
     # Description :
 """
 #==============================================================================
@@ -65,7 +65,7 @@ class N_Body_Gravitation_RK2(N_Body_Gravitationsolver):
             self.disps, self.dists = self.get_relative_distances(positions=next_pos)
             k2 = [
                 next_vel,
-                self.get_next_acc()
+                self.get_next_acc(save=False)
                 ]
 
             self.pos = self.pos + k2[0] * self.dt

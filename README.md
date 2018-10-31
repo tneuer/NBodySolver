@@ -5,11 +5,22 @@
 This is a full set of solvers for the gravitational N-Body problems, solved for small systems with the typical Integrators Leapfrog, Runge-Kutta 2 and Runge-Kutta 4.
 
 * The NBody_Solver.py file implements a parent class for all the others, which handles initialization (read-in) of the initial values, the time step and the reuse of older initial values . The children need to implement a get_next_steps(self, steps) method, where positions and velocities are calculated. In the for-loop the save_system_information(self, positions, velocities) needs to be called after every iteration.
+
 * The LeapFrog.py module implements the leapfrog method solver.
+
 * The RungeKutta2.py module implements the Runge-Kutta 2 solver.
+
 * The RungeKutta4.py module implements the Runge-Kutta 4 solver.
 
+  ```python
+  if __name__ == "__main__":
+      dt = 60*60*24
+      RK4 = N_Body_Gravitation_RK4(dt, "./default_initial_short.json", verbose=True)
+      results = RK4.evolve(steps=10000, saveOnly=None)
+      RK4.plot_trajectories(draw_forces=True, draw_energies=False, show=True)
+  ```
 
+  * The saveOnly options declares how many positions are saved
 
 * The Comparator.py module implements a class which compares the performance of the solvers in terms of energy and runtime. As input it takes a dictonary of solvers, the timestep and the number of steps.
   * The compare method evaluates the solvers for the given steps

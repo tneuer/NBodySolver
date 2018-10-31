@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : RungeKutta4.py
     # Creation Date : Mit 31 Okt 2018 18:42:26 CET
-    # Last Modified : Mit 31 Okt 2018 18:55:45 CET
+    # Last Modified : Mit 31 Okt 2018 22:03:44 CET
     # Description : Implementation of Runge-Kutta 4
 """
 #==============================================================================
@@ -68,7 +68,7 @@ class N_Body_Gravitation_RK4(N_Body_Gravitationsolver):
             self.disps, self.dists = self.get_relative_distances(positions=next_pos)
             k2 = [
                 next_vel * self.dt,
-                self.get_next_acc() * self.dt
+                self.get_next_acc(save=False) * self.dt
                 ]
 
             # Step 3
@@ -77,7 +77,7 @@ class N_Body_Gravitation_RK4(N_Body_Gravitationsolver):
             self.disps, self.dists = self.get_relative_distances(positions=next_pos)
             k3 = [
                 next_vel * self.dt,
-                self.get_next_acc() * self.dt
+                self.get_next_acc(save=False) * self.dt
                 ]
 
             # Step 4
@@ -86,7 +86,7 @@ class N_Body_Gravitation_RK4(N_Body_Gravitationsolver):
             self.disps, self.dists = self.get_relative_distances(positions=next_pos)
             k4 = [
                 next_vel * self.dt,
-                self.get_next_acc() * self.dt
+                self.get_next_acc(save=False) * self.dt
                 ]
 
             # Move forward
@@ -102,9 +102,9 @@ if __name__ == "__main__":
     dt = 60*60*24
     RK4 = N_Body_Gravitation_RK4(dt, "./default_initial_short.json", verbose=True)
 
-    results = RK4.evolve(steps=1000, saveOnly=None)
+    results = RK4.evolve(steps=365, saveOnly=270)
 
-    RK4.plot_trajectories(draw_forces=False, draw_energies=True, show=True)
+    RK4.plot_trajectories(draw_forces=True, draw_energies=False, show=True)
 
 
 

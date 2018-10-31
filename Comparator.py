@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : Comparator.py
     # Creation Date : Mit 31 Okt 2018 18:56:14 CET
-    # Last Modified : Mit 31 Okt 2018 21:35:23 CET
+    # Last Modified : Mit 31 Okt 2018 22:00:04 CET
     # Description : Compares different solvers which inherit from NBody_solver
 """
 #==============================================================================
@@ -67,7 +67,7 @@ class Comparator():
         try:
             self.initials = N_Body_Gravitationsolver.read_initials_from_json("./sun_earth.json")
         except FileNotFoundError:
-            raise FileNotFoundError("Get the sun_earth.json from me personally!")
+            raise FileNotFoundError("Get the sun_earth.json from:\n https://github.com/tneuer/NBodySolver/blob/master/sun_earth.json\n")
 
         self.solvers = {
                 key: solver(dt=self.dt, initials=self.initials, verbose=self.verbose)
@@ -197,7 +197,7 @@ class Comparator():
 
 
 if __name__ == "__main__":
-    dt = 60*60*48
+    dt = 60*60*24
     steps = 500000
     solvers = {
             "LeapFrog": N_Body_Gravitation_LF,
