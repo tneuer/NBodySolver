@@ -68,10 +68,6 @@ class N_Body_Gravitation_LF(N_Body_Gravitationsolver):
             # Saving of statistics
             self.save_system_information(self.pos, self.vel)
 
-            if self.verbose and step % 500 == 0:
-                print(step, "/", steps)
-
-
 
 if __name__ == "__main__":
     dt = 60*60*24

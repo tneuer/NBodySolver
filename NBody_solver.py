@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : NBody_solver.py
     # Creation Date : Mit 31 Okt 2018 08:42:46 CET
-    # Last Modified : Mit 31 Okt 2018 16:12:26 CET
+    # Last Modified : Mit 31 Okt 2018 19:18:03 CET
     # Description : Superclass for all other integrators whic mainly handles initialization.
 """
 #==============================================================================
@@ -44,32 +44,7 @@ class N_Body_Gravitationsolver():
             If true, updates on progress is given.
         """
         if isinstance(initials, str):
-            with open(initials, "r") as f:
-                initials = json.load(f)
-
-            names = []; masses = []; r_init = []; v_init = []; colors = []; sizes =[]
-
-            for key, value in initials.items():
-                names.append(key)
-                masses.append(value["mass"])
-                r_init.append(value["r_init"])
-                v_init.append(value["v_init"])
-                colors.append(value["color"])
-                powers_comp_to_earth = np.log10(value["mass"]/5.9742e24)
-                markersize = powers_comp_to_earth if powers_comp_to_earth>0 else -1/(powers_comp_to_earth-1)
-                sizes.append(markersize)
-
-            masses = np.array(masses); r_init = np.array(r_init);
-            v_init = np.array(v_init); sizes=np.array(sizes)
-
-            self.initials = {
-                    "r_init": r_init,
-                    "v_init": v_init,
-                    "masses": masses,
-                    "colors": colors,
-                    "sizes": sizes,
-                    "names": names
-                    }
+            self.initials = self.read_initials_from_json(initials)
         else:
             self.initials = initials
 
@@ -101,6 +76,36 @@ class N_Body_Gravitationsolver():
                 "Initial position and velocity must have same dimension.")
         assert self.pos.shape[0] == len(self.mas), (
                 "Mass input and positions indicate different number of bodies.")
+
+    @staticmethod
+    def read_initials_from_json(filepath):
+
+        with open(filepath, "r") as f:
+            initials = json.load(f)
+
+        names = []; masses = []; r_init = []; v_init = []; colors = []; sizes =[]
+
+        for key, value in initials.items():
+            names.append(key)
+            masses.append(value["mass"])
+            r_init.append(value["r_init"])
+            v_init.append(value["v_init"])
+            colors.append(value["color"])
+            powers_comp_to_earth = np.log10(value["mass"]/5.9742e24)
+            markersize = powers_comp_to_earth if powers_comp_to_earth>0 else -1/(powers_comp_to_earth-1)
+            sizes.append(markersize)
+
+        masses = np.array(masses); r_init = np.array(r_init);
+        v_init = np.array(v_init); sizes=np.array(sizes)
+
+        return  {
+                "r_init": r_init,
+                "v_init": v_init,
+                "masses": masses,
+                "colors": colors,
+                "sizes": sizes,
+                "names": names
+                }
 
 
     def evolve(self, steps=None, t_end=None, saveOnly=None, mass_sun=None):
@@ -225,12 +230,18 @@ class N_Body_Gravitationsolver():
         return self.posCollect, self.velCollect, self.forces, self.energies, self.timesteps
 
 
-    def get_relative_distances(self):
+    def get_relative_distances(self, positions=None):
         """ Calculate the distances between bodies.
 
         This is done completely with numpy number crunching methods but is still less
         effective than optimized code, as all distances are calculated and stored twice
         for the distance from $a$ to $b$ and als from $b$ to $a$.
+
+        Arguments
+        ---------
+        positions : array or None [None]
+            Array of current position differences coordinatewis as defined in
+            get_relative_distances(). If None, current positions are assumed.
 
         Returns
         -------
@@ -272,7 +283,11 @@ class N_Body_Gravitationsolver():
                     [d_n0, d_n1, d_n2, ..., np.inf]
                 )
         """
-        disps = self.pos.reshape((1, -1, self.dim)) - self.pos.reshape((-1, 1, self.dim))
+        if positions is None:
+            disps = self.pos.reshape((1, -1, self.dim)) - self.pos.reshape((-1, 1, self.dim))
+        else:
+            disps = positions.reshape((1, -1, self.dim)) - positions.reshape((-1, 1, self.dim))
+
         dists = norm(disps, axis=2)
         dists[dists == 0] = np.inf # Avoid divide by zero warnings
         return disps, dists
@@ -284,12 +299,13 @@ class N_Body_Gravitationsolver():
 
         Returns
         -------
-
+            Acceleration on every particle in each of the given dimensions.
 
         """
         forces = self.G*self.disps*self.mass_matrix/np.expand_dims(self.dists, 2)**3
         forces_per_particle = forces.sum(axis=1)
         self.forces.append(forces_per_particle)
+
         return forces_per_particle/self.mas.reshape(-1, 1)
 
 
@@ -325,6 +341,8 @@ class N_Body_Gravitationsolver():
         self.kin_energies.append(self.get_kinetic_energy_of_system())
         self.pot_energies.append(self.get_potential_energy_of_system())
 
+        if self.verbose and self.calledSave % 10000 == 0:
+            print(self.calledSave, "/", self.steps)
 
     def plot_trajectories(self, show=True, draw_forces=False, draw_energies=False):
         """ Plots the trajectories of all bodies in the system.
@@ -352,6 +370,10 @@ class N_Body_Gravitationsolver():
         """
 
         r_max = np.max(self.posCollect)
+        startDay = np.round(self.timesteps[0]/(60*60*24), 2)
+        endDay = np.round(self.timesteps[-1]/(60*60*24), 2)
+        startYear = np.round(startDay/365, 2); endYear = np.round(endDay/365, 2)
+
         fig = plt.figure()
         fig.patch.set_facecolor("k")
         ax = plt.axes(xlim=(-r_max, r_max), ylim=(-r_max, r_max))
@@ -397,15 +419,26 @@ class N_Body_Gravitationsolver():
 
         plt.plot([0], [0], color="w", label="forces", linestyle="solid")
         plt.legend(loc=2, bbox_to_anchor=(0.9, 1.15))
+        plt.title(
+                "Day: {} - {} | Year: {} - {}".format(
+                    startDay, endDay, startYear, endYear),
+                color="#AFFFF2"
+                )
 
         if draw_energies:
             fig = [fig]; ax = [ax]
             total_energies = self.energies.sum(axis=0)
 
             f = plt.figure()
+            f.tight_layout()
             a = plt.gca()
             plt.grid()
-            plt.plot(self.timesteps, total_energies, marker="o", linestyle="dashed")
+            plt.plot(np.round(np.array(self.timesteps)/(60*60*24), 2),
+                    total_energies,
+                    marker="o",
+                    linestyle="dashed")
+            plt.xlabel("Time [days]")
+            plt.ylabel("Energy [Joule]")
 
             fig.append(f); ax.append(a)
 

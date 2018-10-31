@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : RungeKutta2.py
     # Creation Date : Mit 31 Okt 2018 16:13:04 CET
-    # Last Modified : Mit 31 Okt 2018 16:13:33 CET
+    # Last Modified : Mit 31 Okt 2018 18:40:48 CET
     # Description :
 """
 #==============================================================================
@@ -21,20 +21,20 @@ from NBody_solver import N_Body_Gravitationsolver
 
 np.set_printoptions(precision=16)
 
-class N_Body_Gravitation_LF(N_Body_Gravitationsolver):
-    """ Solver of PDE's via the LeapFrog method.
+class N_Body_Gravitation_RK2(N_Body_Gravitationsolver):
+    """ Solver of PDE's via the Runge-Kutta2 method.
     Designed to solve gravitational N-Body systems.
     Many basic functionalities like calculating the distances, accelarations, energies
     are taken from the parent class.
 
-    See https://en.wikipedia.org/wiki/Leapfrog_integration
+    See https://www.ctcms.nist.gov/~langer/oof2man/RegisteredClass-RK2.html
     """
 
     def __init__(self, dt, initials, verbose=True):
         N_Body_Gravitationsolver.__init__(self, dt, initials, verbose)
 
     def get_next_steps(self, steps):
-        """ Evolves the system according to the potential with leapfrog method.
+        """ Evolves the system according to the potential with Runge-Kutta 2 method.
 
         This function should not be called directly but use:
 
@@ -53,33 +53,36 @@ class N_Body_Gravitation_LF(N_Body_Gravitationsolver):
             Body is save by calling the get_next_acc() and save_system_information()
             methods.
         """
-        # Leapfrog specific initialisation
-        if not self.alreadyRun:
-            self.acc = self.get_next_acc()
-            self.vel = self.vel + 0.5 * self.acc * self.dt
-
         for step in range(steps):
-            # Actual calulation: Leapfrog
-            self.pos = self.pos + self.vel * self.dt
-            self.disps, self.dists = self.get_relative_distances()
-            self.acc = self.get_next_acc()
-            self.vel = self.vel + self.acc * self.dt
+            # Actual calulation: Runge-Kutta 2
+
+            # Step 1
+            k1 = [self.vel, self.get_next_acc()]
+
+            # Step 2
+            next_pos = self.pos + k1[0] * self.dt * 0.5
+            next_vel = self.vel + k1[1] * self.dt * 0.5
+            self.disps, self.dists = self.get_relative_distances(positions=next_pos)
+            k2 = [
+                next_vel,
+                self.get_next_acc()
+                ]
+
+            self.pos = self.pos + k2[0] * self.dt
+            self.vel = self.vel + k2[1] * self.dt
 
             # Saving of statistics
             self.save_system_information(self.pos, self.vel)
-
-            if self.verbose and step % 500 == 0:
-                print(step, "/", steps)
 
 
 
 if __name__ == "__main__":
     dt = 60*60*24
-    leapfrog = N_Body_Gravitation_LF(dt, "./default_initial_short.json", verbose=True)
+    RK2 = N_Body_Gravitation_RK2(dt, "./default_initial_short.json", verbose=True)
 
-    results = leapfrog.evolve(steps=1000, saveOnly=None)
+    results = RK2.evolve(steps=1000, saveOnly=None)
 
-    leapfrog.plot_trajectories(draw_forces=True, draw_energies=True, show=True)
+    RK2.plot_trajectories(draw_forces=False, draw_energies=False, show=True)
 
 
 
