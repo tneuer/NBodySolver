@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : Comparator.py
     # Creation Date : Mit 31 Okt 2018 18:56:14 CET
-    # Last Modified : Mit 31 Okt 2018 21:12:54 CET
+    # Last Modified : Mit 31 Okt 2018 21:35:23 CET
     # Description : Compares different solvers which inherit from NBody_solver
 """
 #==============================================================================
@@ -23,7 +23,7 @@ from RungeKutta4 import N_Body_Gravitation_RK4
 from NBody_solver import N_Body_Gravitationsolver
 
 matplotlib.rcParams["axes.labelsize"] = 40
-matplotlib.rcParams["axes.titlesize"] = 30
+matplotlib.rcParams["axes.titlesize"] = 20
 matplotlib.rcParams["text.color"] = "#AFFFF2"
 
 
@@ -152,7 +152,7 @@ class Comparator():
                 ]
         yticks_labels = ["{}".format(e) for e in ax_energies.get_xticks()]
         ax_energies.set_xticks(xticks_values)
-        ax_energies.set_xticklabels(xticks_labels, fontsize=20)
+        ax_energies.set_xticklabels(xticks_labels, fontsize=15)
         ax_energies.set_yticklabels(yticks_labels, fontsize=20)
         legend = ax_energies.legend(fontsize=30)
         plt.setp(legend.get_texts(), color="k")
@@ -167,14 +167,15 @@ class Comparator():
         # Define axis for trajectories plot
         ax_trajectories.set_xlim(-r_max, r_max)
         ax_trajectories.set_ylim(-r_max, r_max)
-        ax_trajectories.legend(loc=2, bbox_to_anchor=(0.72, 1.15), fontsize=30)
+        ax_trajectories.legend(loc=2, bbox_to_anchor=(0.72, 1.15), fontsize=20)
         ax_trajectories.set_title(
-                    "Days: {} - {} | Years: {} - {}".format(
+                    "Days: {} - {} | Years: {} - {} | Stepsize {}".format(
                     timesteps[0], timesteps[-1],
                     np.round(timesteps[0]/365, 2), np.round(timesteps[-1]/365, 2),
+                    self.dt),
                     color="#AFFFF2"
-                    ))
-        legend = ax_trajectories.legend(loc=2, bbox_to_anchor=(0.72, 1.15), fontsize=30)
+                    )
+        legend = ax_trajectories.legend(loc=2, bbox_to_anchor=(0.72, 1.15), fontsize=20)
         plt.setp(legend.get_texts(), color="k")
 
         if save:
@@ -183,11 +184,11 @@ class Comparator():
 
             if os.path.exists(filepath_traj):
                 os.remove(filepath_traj)
-            fig_trajectories.savefig(filepath_traj, facecolor=fig_trajectories.get_facecolor())
+            fig_trajectories.savefig(filepath_traj, facecolor=fig_trajectories.get_facecolor(), bbox_inches="tight")
 
             if os.path.exists(filepath_ener):
                 os.remove(filepath_ener)
-            fig_energies.savefig(filepath_ener)
+            fig_energies.savefig(filepath_ener, bbox_inches="tight")
 
         if show:
             plt.show()
@@ -196,8 +197,8 @@ class Comparator():
 
 
 if __name__ == "__main__":
-    dt = 60*60*72
-    steps = 1000000
+    dt = 60*60*48
+    steps = 500000
     solvers = {
             "LeapFrog": N_Body_Gravitation_LF,
             "RK2": N_Body_Gravitation_RK2,
@@ -206,7 +207,7 @@ if __name__ == "__main__":
 
     comparator = Comparator(solvers, dt, steps)
 
-    comparator.compare(show=False)
+    comparator.compare(show=True, save=True)
 
 
 
