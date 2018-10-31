@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : DashComparison.py
     # Creation Date : Mon 29 Okt 2018 15:20:38 CET
-    # Last Modified : Die 30 Okt 2018 22:49:50 CET
+    # Last Modified : Mit 31 Okt 2018 13:52:23 CET
     # Description : Compares the results of the NBodySolvers for comparison.
 """
 #==============================================================================
@@ -324,7 +324,7 @@ def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_st
                     R_MAX = max_pos
                     R_MAX = 1.05 * R_MAX
                 scale_for_escaping = R_MAX_INIT / R_MAX
-                INITIALS["sizes"][0] = (np.log10(sun_mass/5.97e24)+10)*1.2
+                INITIALS["sizes"][0] = (np.log10(sun_mass/5.9724e24)+10)
                 INITIALS["scaled_sizes"] = INITIALS["sizes"] * scale_for_escaping
                 days = np.round(timesteps[-1]/(3600 * 24), 2)
                 years = np.round(days/365,2)
@@ -459,10 +459,9 @@ def read_initials_from_json(jsonpath, planets=None):
             r_init.append(value["r_init"])
             v_init.append(value["v_init"])
             colors.append(value["color"])
-            rel_to_earth = value["mass"]/5.97e24
-            logvalue = np.log10(rel_to_earth)
-            markersize = logvalue if  logvalue>0 else -1/(logvalue-1)
-            sizes.append((markersize+10)*1.2)
+            powers_comp_to_earth = np.log10(value["mass"]/5.9742e24)
+            markersize = powers_comp_to_earth if powers_comp_to_earth>0 else -1/(powers_comp_to_earth-1)
+            sizes.append((markersize+10))
 
     masses = np.array(masses); r_init = np.array(r_init); v_init = np.array(v_init);
     sizes = np.array(sizes)

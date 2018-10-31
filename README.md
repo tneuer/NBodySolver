@@ -8,6 +8,7 @@
 - ~~planets get smaller with bigger scale~~
 - show planet position before adding
 - draw every quarter year where earth should be
+- refactor with Superclass ODESOLVER
 
 #### Dependencies
 
