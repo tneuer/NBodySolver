@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : DashComparison.py
     # Creation Date : Mon 29 Okt 2018 15:20:38 CET
-    # Last Modified : Mit 31 Okt 2018 13:52:23 CET
+    # Last Modified : Don 01 Nov 2018 00:03:20 CET
     # Description : Compares the results of the NBodySolvers for comparison.
 """
 #==============================================================================
@@ -26,18 +26,28 @@ from collections import deque
 from dash.dependencies import Input, Output, Event, State
 
 from LeapFrog import N_Body_Gravitation_LF
+from RungeKutta2 import N_Body_Gravitation_RK2
+from RungeKutta4 import N_Body_Gravitation_RK4
+from NBody_solver import N_Body_Gravitationsolver
 
+####
+# Global variables
+####
+
+SOLVER = {}
+INITIALS = 0
 DT = 60*60*24*4
-M_SUN = 1.98892e30
 CLICKS_START = 0
 CLICKS_RESET = 0
-SOLVER = {}
+M_SUN = 1.98892e30
+INITIALFILE = "./user_initials.json"
 DEFAULTPLANETS = ["earth", "venus", "mercury"]
-INITIALS = 0
 
+####
+# Construct a copy of the initial file, where user planets are appended
+####
 if not os.path.exists("./user_initials.json"):
-    copyfile("./default_initial.json", "./user_initials.json")
-
+    copyfile("./default_initial.json", INITIALFILE)
 
 app = dash.Dash("vehicle_data")
 
@@ -51,6 +61,9 @@ app.layout = html.Div([
             ),
 
     html.Div([
+        ####
+        # Dropdown menu for planet selection
+        ####
         html.Div([
             html.Div(children="Available planets:"),
 
@@ -73,6 +86,9 @@ app.layout = html.Div([
             ],
             className="eight columns"),
 
+        ####
+        # Environment for entering custom planet
+        ####
         html.Div([
             html.Div([
                 html.Div([
@@ -113,6 +129,9 @@ app.layout = html.Div([
         ],
         className='row'),
 
+    ####
+    # Select integrator algorithm
+    ####
     html.Div([
         html.Div("Solver", style={"marginTop": "10px"}),
         dcc.Checklist(
@@ -131,12 +150,17 @@ app.layout = html.Div([
             ),
         ]),
 
-
+    ####
+    # Trajectories and energy is plotted here
+    ####
     html.Div(
         children=html.Div(id='graphs'),
         ),
     dcc.Interval(id="graph-update", interval=1e8),
 
+    ####
+    # Plot function like Start_Stop, sun_mass, stepsise and drag
+    ####
     html.Div([
         html.Div(id="StartStopButton", children=html.Button(
             id="start_stop",
@@ -144,6 +168,7 @@ app.layout = html.Div([
             style={"background-color": "#00F240"},
             className="two columns")),
         html.Button(id="reset", children="Reset", className="two columns"),
+
         html.Div(dcc.Slider(
             id="sun_mass",
             marks={i: "{}".format(np.round(10**i, 2)) for i in np.arange(-0.9, 0.9, 0.3)},
@@ -152,6 +177,7 @@ app.layout = html.Div([
             value=0,
             step=0.2,
             ), className="four columns"),
+
         html.Div(children="Timestep", className="one column"),
         html.Div(dcc.Input(
                     id="timestep",
@@ -161,6 +187,7 @@ app.layout = html.Div([
                 className="one column",
                 style={"marginLeft": "-10px"}
                 ),
+
         html.Div(children="Drag", className="one column"),
         html.Div(dcc.Input(
                     id="drag",
@@ -179,17 +206,6 @@ app.layout = html.Div([
         'margin-right':10,
         'max-width':50000},
     )
-
-external_css = [
-        'https://codepen.io/chriddyp/pen/bWLwgP.css',
-        ]
-for css in external_css:
-    app.css.append_css({"external_url": css})
-
-external_js = ['https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js']
-for js in external_css:
-    app.scripts.append_script({'external_url': js})
-
 
 @app.callback(
         Output("StartStopButton", "children"),
@@ -442,42 +458,16 @@ def transform_sun_mass(sun_mass_scale):
     return M_SUN  * 10**sun_mass_scale
 
 
-def read_initials_from_json(jsonpath, planets=None):
 
-    with open(jsonpath, "r") as f:
-        initials = json.load(f)
+external_css = [
+        'https://codepen.io/chriddyp/pen/bWLwgP.css',
+        ]
+for css in external_css:
+    app.css.append_css({"external_url": css})
 
-    names = []; masses = []; r_init = []; v_init = []; colors = []; sizes = []
-
-    if planets is None:
-        planets = list(initials.keys())
-
-    for key, value in initials.items():
-        if key in planets:
-            names.append(key)
-            masses.append(value["mass"])
-            r_init.append(value["r_init"])
-            v_init.append(value["v_init"])
-            colors.append(value["color"])
-            powers_comp_to_earth = np.log10(value["mass"]/5.9742e24)
-            markersize = powers_comp_to_earth if powers_comp_to_earth>0 else -1/(powers_comp_to_earth-1)
-            sizes.append((markersize+10))
-
-    masses = np.array(masses); r_init = np.array(r_init); v_init = np.array(v_init);
-    sizes = np.array(sizes)
-
-    initials = {
-            "names": names,
-            "r_init": r_init,
-            "v_init": v_init,
-            "masses": masses,
-            "colors": colors,
-            "sizes": sizes
-            }
-
-    return initials
-
-
+external_js = ['https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js']
+for js in external_css:
+    app.scripts.append_script({'external_url': js})
 
 
 if __name__ == "__main__":

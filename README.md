@@ -41,19 +41,29 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
 #### Dependencies
 
-- .json
-- color
-- Dash
+For the normal solvers:
 
+- json
 
-
-``` bash
+```bash
 # Color package
 >> pip install color
+```
 
+
+
+For the Dash simulation
+
+- color
+
+```bash
 # json package
 >> pip install json
+```
 
+- Dash
+
+``` bash
 # Dash (from https://dash.plot.ly/installation)
 >> pip install dash==0.28.5  # The core dash backend
 >> pip install dash-html-components==0.13.2  # HTML components
@@ -76,4 +86,5 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 - draw every quarter year where earth should be
 - ~~refactor with Superclass ODESOLVER~~
 - Comparison to true values in sun-earth system --> error calculation
+- Focus coordinatesystem on heaviest object
 

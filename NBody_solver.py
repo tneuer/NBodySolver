@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : NBody_solver.py
     # Creation Date : Mit 31 Okt 2018 08:42:46 CET
-    # Last Modified : Mit 31 Okt 2018 22:43:53 CET
+    # Last Modified : Mit 31 Okt 2018 23:22:23 CET
     # Description : Superclass for all other integrators whic mainly handles initialization.
 """
 #==============================================================================

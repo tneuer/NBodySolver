@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : Comparator.py
     # Creation Date : Mit 31 Okt 2018 18:56:14 CET
-    # Last Modified : Mit 31 Okt 2018 22:23:22 CET
+    # Last Modified : Mit 31 Okt 2018 23:44:46 CET
     # Description : Compares different solvers which inherit from NBody_solver
 """
 #==============================================================================
@@ -129,7 +129,7 @@ class Comparator():
             # Plot energies
             energies = energies.sum(axis=0)
             timesteps = np.round(np.array(timesteps)/(60*60*24), 2)
-            ax_energies.plot(timesteps, energies, label=name)
+            ax_energies.plot(timesteps, energies, label=name, alpha=0.4)
 
             # Plot trajectories
             curr_max = np.max(positions)
@@ -196,7 +196,7 @@ class Comparator():
 
 
 if __name__ == "__main__":
-    dt = 60*60*24
+    dt = 60*60*48
     steps = 500000
     solvers = {
             "LeapFrog": N_Body_Gravitation_LF,
