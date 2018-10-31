@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : NBody_solver.py
     # Creation Date : Mit 31 Okt 2018 08:42:46 CET
-    # Last Modified : Mit 31 Okt 2018 22:38:23 CET
+    # Last Modified : Mit 31 Okt 2018 22:43:53 CET
     # Description : Superclass for all other integrators whic mainly handles initialization.
 """
 #==============================================================================
@@ -502,7 +502,8 @@ class N_Body_Gravitationsolver():
             figs.append(fig_energies); ax.append(ax_energies)
 
         if save:
-            filepath_traj = "./Figures/Trajectories_{}_{}.png".format(self.__class__, self.steps)
+            algo = self.__class__.__name__
+            filepath_traj = "./Figures/Trajectories_{}_{}.png".format(algo, self.steps)
 
             if os.path.exists(filepath_traj):
                 os.remove(filepath_traj)
@@ -512,7 +513,7 @@ class N_Body_Gravitationsolver():
                     bbox_inches="tight")
 
             if draw_energies:
-                filepath_ener = "./Figures/Energies_{}_{}.png".format(self.__class__, self.steps)
+                filepath_ener = "./Figures/Energies_{}_{}.png".format(algo, self.steps)
 
                 if os.path.exists(filepath_ener):
                     os.remove(filepath_ener)
