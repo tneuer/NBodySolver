@@ -16,11 +16,13 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
   if __name__ == "__main__":
       dt = 60*60*24
       RK4 = N_Body_Gravitation_RK4(dt, "./default_initial_short.json", verbose=True)
-      results = RK4.evolve(steps=10000, saveOnly=None)
-      RK4.plot_trajectories(draw_forces=True, draw_energies=False, show=True)
+      results = RK4.evolve(steps=365, saveOnly=270)
+      RK4.plot_trajectories(draw_forces=True, draw_energies=False, show=True, save=True)
   ```
 
   * The saveOnly options declares how many positions are saved
+
+    ![Force RK4](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Figures/Trajectories_N_Body_Gravitation_RK4_365.png)
 
 * The Comparator.py module implements a class which compares the performance of the solvers in terms of energy and runtime. As input it takes a dictonary of solvers, the timestep and the number of steps.
   * The compare method evaluates the solvers for the given steps
@@ -29,11 +31,11 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
 
 
-![Energies](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Energies_500k.png "Energies after 500k iterations and timestep 2 days")
+![Energies](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Figures/Energies_500k.png)
 
 
 
-![Trajectories](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Trajectories_500k.png)
+![Trajectories](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Figures/Trajectories_500k.png)
 
 
 
