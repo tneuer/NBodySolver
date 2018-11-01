@@ -54,13 +54,6 @@ For the normal solvers:
 
 For the Dash simulation
 
-- color
-
-```bash
-# json package
->> pip install json
-```
-
 - Dash
 
 ``` bash
