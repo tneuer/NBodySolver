@@ -39,6 +39,14 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
 
 
+#### Features
+
+* Variable drag
+* Variable mass of central star
+* Automaggtic recognition of unused dimensions
+
+
+
 #### Dependencies
 
 For the normal solvers:
@@ -71,13 +79,16 @@ For the Dash simulation
 
 - ~~Implements logartihmic mass scaling for point size~~
 - ~~Dark background colour~~
-- Destruction of colliding planets
-- add Planet live
 - ~~Change mass of sun~~
 - ~~planets get smaller with bigger scale~~
-- show planet position before adding
-- draw every quarter year where earth should be
 - ~~refactor with Superclass ODESOLVER~~
 - Comparison to true values in sun-earth system --> error calculation
 - Focus coordinatesystem on heaviest object
-
+- Different Solver in one plot or all in different
+- ~~Timestep input~~
+- ~~Automatic update to two body dimension~~
+- ~~show planet position before adding~~
+- draw every quarter year where earth should be
+- Restart message 
+- body error message
+- No fail if body is added during runtime

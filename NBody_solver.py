@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : NBody_solver.py
     # Creation Date : Mit 31 Okt 2018 08:42:46 CET
-    # Last Modified : Mit 31 Okt 2018 23:22:23 CET
+    # Last Modified : Fre 02 Nov 2018 00:27:43 CET
     # Description : Superclass for all other integrators whic mainly handles initialization.
 """
 #==============================================================================
@@ -84,25 +84,37 @@ class N_Body_Gravitationsolver():
                 "Mass input and positions indicate different number of bodies.")
 
     @staticmethod
-    def read_initials_from_json(filepath):
+    def read_initials_from_json(filepath, selected_bodies=None):
 
         with open(filepath, "r") as f:
             initials = json.load(f)
 
         names = []; masses = []; r_init = []; v_init = []; colors = []; sizes =[]
 
+        if selected_bodies is None:
+            selected_bodies = list(initials.keys())
         for key, value in initials.items():
-            names.append(key)
-            masses.append(value["mass"])
-            r_init.append(value["r_init"])
-            v_init.append(value["v_init"])
-            colors.append(value["color"])
-            powers_comp_to_earth = np.log10(value["mass"]/5.9742e24)
-            markersize = powers_comp_to_earth if powers_comp_to_earth>0 else -1/(powers_comp_to_earth-1)
-            sizes.append(markersize)
+            if key in selected_bodies:
+                names.append(key)
+                masses.append(value["mass"])
+                r_init.append(value["r_init"])
+                v_init.append(value["v_init"])
+                colors.append(value["color"])
+                powers_comp_to_earth = np.log10(value["mass"]/5.9742e24)
+                markersize = powers_comp_to_earth if powers_comp_to_earth>0 else -1/(powers_comp_to_earth-1)
+                sizes.append(markersize+10)
 
         masses = np.array(masses); r_init = np.array(r_init);
         v_init = np.array(v_init); sizes=np.array(sizes)
+
+        null_dim_space = np.array(r_init).sum(axis=0)==0
+        null_dim_veloc = np.array(v_init).sum(axis=0)==0
+
+        null_dim = np.equal(null_dim_space, null_dim_veloc)
+
+        if np.any(null_dim):
+            r_init = np.array(r_init)[:, ~null_dim]
+            v_init = np.array(v_init)[:, ~null_dim]
 
         return  {
                 "r_init": r_init,
@@ -114,7 +126,7 @@ class N_Body_Gravitationsolver():
                 }
 
 
-    def evolve(self, steps=None, t_end=None, saveOnly=None, mass_sun=None):
+    def evolve(self, steps=None, t_end=None, saveOnly=None, mass_sun=None, dt=None):
         """ Evolves the system according to the potential.
 
         A get_next_steps(self, steps) method has to be implemented, which may use:
@@ -146,6 +158,8 @@ class N_Body_Gravitationsolver():
         mass_sun : float or None [None]
             Adjust mass of the sun dynamically (in simulations).
             If None the intital value is used.
+        dt : float or None [None]
+            Adjust timestep dynamically (in simulation).
 
         Returns
         -------
@@ -216,6 +230,8 @@ class N_Body_Gravitationsolver():
             self.mas[sun_index] = mass_sun
             self.mass_matrix = self.mas.reshape((1, -1, 1))*self.mas.reshape((-1, 1, 1))
 
+        if dt is not None:
+            self.dt = dt
         # Assert existence of 'get_next_steps'
         get_next_steps = getattr(self, "get_next_steps", None)
         if callable(get_next_steps):

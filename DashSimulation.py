@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : DashComparison.py
     # Creation Date : Mon 29 Okt 2018 15:20:38 CET
-    # Last Modified : Don 01 Nov 2018 02:18:23 CET
+    # Last Modified : Fre 02 Nov 2018 02:24:20 CET
     # Description : Compares the results of the NBodySolvers for comparison.
 """
 #==============================================================================
@@ -34,22 +34,23 @@ from NBody_solver import N_Body_Gravitationsolver as BaseSolver
 # Global variables
 ####
 
-SOLVER = {}
+SOLVER = {"LF": N_Body_Gravitation_LF}
 INITIALS = 0
-DT = 60*60*24*4
+DT = 60*60*24
 RUNNING = False
 CLICKS_START = 0
 CLICKS_RESET = 0
 M_SUN = 1.98892e30
 INITIALFILE = "./user_initials.json"
-CURRENTFILE = "./user_current.json"
-DEFAULTPLANETS = ["earth", "venus", "mercury"]
-
+DEFAULTPLANETS = ["sun", "earth", "venus", "mercury"]
 ####
 # Construct a copy of the initial file, where user planets are appended
 ####
-if not os.path.exists("./user_initials.json"):
+if not os.path.exists(INITIALFILE):
     copyfile("./default_initial.json", INITIALFILE)
+with open(INITIALFILE, "r") as f:
+    for_options = json.load(f)
+INITIALOPTIONS = [{"label": o.capitalize(), "value": o} for o in for_options]
 
 app = dash.Dash("vehicle_data")
 
@@ -71,17 +72,7 @@ app.layout = html.Div([
 
             html.Div(id="div_dd_planets", children=dcc.Dropdown(
                 id='dd_planets',
-                options=[
-                    {'label': "Sun", 'value': "sun"},
-                    {'label': "Mercury", 'value': "mercury"},
-                    {'label': "Venus", 'value': "venus"},
-                    {'label': "Earth", 'value': "earth"},
-                    {'label': "Mars", 'value': "mars"},
-                    {'label': "Jupiter", 'value': "jupiter"},
-                    {'label': "Saturn", 'value': "saturn"},
-                    {'label': "Uranus", 'value': "uranus"},
-                    {'label': "Neptune", 'value': "neptune"},
-                    ],
+                options=INITIALOPTIONS,
                 value=DEFAULTPLANETS,
                 multi=True,
                 style={"marginTop": "50px"}
@@ -106,13 +97,13 @@ app.layout = html.Div([
                     dcc.Input(id="bodyname", style={"width": "90%", "padding": "0px"}, value="Custom1"),
                     dcc.Input(id="xpos", style={"width": "90%", "padding": "0px"}),
                     dcc.Input(id="ypos", style={"width": "90%", "padding": "0px"}, value=0),
-                    dcc.Input(id="zpos", style={"width": "90%", "padding": "0px"}, value=0),
-                    dcc.Input(id="pcolor", style={"width": "90%", "padding": "0px"}),
+                    dcc.Input(id="zpos", disabled=False, style={"width": "90%", "padding": "0px"}, value=0),
+                    dcc.Input(id="pcolor", style={"width": "90%", "padding": "0px"}, value="#FFFFFF"),
                     ],
                     className="three columns"),
                 html.Div([
                     html.Div("Bodymass [kg]", style={"textAlign": "center", "marginTop": "3px"}),
-                    html.Div("vx-init [AU]", style={"textAlign": "center", "marginTop": "3px"}),
+                    html.Div("vx-init [m/s]", style={"textAlign": "center", "marginTop": "3px"}),
                     html.Div("vy-init [m/s]", style={"textAlign": "center", "marginTop": "3px"}),
                     html.Div("vz-init [m/s]", style={"textAlign": "center", "marginTop": "3px"}),
                     html.Button(id="AddPlanet", children="AddPlanet", style={"marginTop": "30px"})
@@ -122,7 +113,7 @@ app.layout = html.Div([
                     dcc.Input(id="bodymass", style={"width": "90%", "padding": "0px"}),
                     dcc.Input(id="xvel", style={"width": "90%", "padding": "0px"}, value=0),
                     dcc.Input(id="yvel", style={"width": "90%", "padding": "0px"}),
-                    dcc.Input(id="zvel", style={"width": "90%", "padding": "0px"}, value=0),
+                    dcc.Input(id="zvel", disabled=False, style={"width": "90%", "padding": "0px"}, value=0),
                     ],
                     className="three columns"),
                 ],
@@ -200,7 +191,10 @@ app.layout = html.Div([
                 style={"marginLeft": "-20px"}
                 ),
         ],
-        className="row"),
+        className="row",
+        style={
+            "marginTop": "15px"
+            }),
 
     html.Div(id="Trash1") # Pseudooutput from update_initials_from_json callback()
     ],
@@ -249,9 +243,9 @@ def change_start_to_stop_Button(clicks_start, clicks_reset, status):
         State("bodyname", "value"), State("bodymass", "value"),
         State("xpos", "value"), State("ypos", "value"), State("zpos", "value"),
         State("xvel", "value"), State("yvel", "value"), State("zvel", "value"),
-        State("pcolor", "value")]
+        State("pcolor", "value"), State("zpos", "disabled")]
         )
-def update_dropdown_planets(clicks, values, options, *args):
+def update_dropdown_planets(clicks, bodies, options, *args):
     """ If the "Add Planet" button is pressed, the dropdown menu for the planets gets updated.
 
     First the input is checked for consistency:
@@ -262,28 +256,44 @@ def update_dropdown_planets(clicks, values, options, *args):
         - pcolor : color
 
     The resulting change of the dropdown menu leads to the call of
-    the callback update_initials_from_json(), which stores the new planet in both the files
-    ./user_initials.json and ./user_current
+    the callback update_initials_from_json(), which stores the new planet in the file
+    ./user_initials.json
     """
     global INITIALS
 
     correct_planet_format = transform_user_planet_input(args)
-    if correct_planet_format: #Planet is accepted and added to ./user_current.json
+    if correct_planet_format: #Planet is accepted and added to ./user_initials.json
         name = correct_planet_format["name"]
         options += [{"label": name, "value": name.lower()}]
-        values += [name.lower()]
-        INITIALS[name] = {
-                "mass": correct_planet_format["mass"],
-                "r_init": correct_planet_format["r_init"],
-                "v_init": correct_planet_format["v_init"],
-                "color": correct_planet_format["color"]
+        bodies += [name.lower()]
+        INITIALS["names"].append(correct_planet_format["name"])
+        INITIALS["masses"] = np.append(INITIALS["masses"], correct_planet_format["mass"])
+        INITIALS["r_init"] = np.append(INITIALS["r_init"], correct_planet_format["r_init"], axis=0)
+        INITIALS["v_init"] = np.append(INITIALS["v_init"], correct_planet_format["v_init"], axis=0)
+        INITIALS["colors"].append(correct_planet_format["color"])
+
+        ####
+        # Save new user planet into ./user_initials.json
+        ####
+        padding = 3 - INITIALS["r_init"].shape[1] #fill to three dimensions
+        with open(INITIALFILE, "r") as f:
+            user_initial = json.load(f)
+        for i, body in enumerate(bodies):
+            user_initial[body] = {
+                "mass": INITIALS["masses"][i],
+                "r_init": list(np.pad(INITIALS["r_init"][i].astype(float), (0, padding), "constant")),
+                "v_init": list(np.pad(INITIALS["v_init"][i].astype(float), (0, padding), "constant")),
+                "color": INITIALS["colors"][i]
                 }
+        updated_initials = json.dumps(user_initial)
+        with open(INITIALFILE, "w") as f:
+            f.write(updated_initials)
 
     # if False: return old dropdown menu
     dropdown_menu = dcc.Dropdown(
         id='dd_planets',
         options=options,
-        value=values,
+        value=bodies,
         multi=True,
         style={"marginTop": "50px"}
         )
@@ -302,17 +312,22 @@ def transform_user_planet_input(user_input):
         - pcolor : color
     """
     planet_info = {}
+    AU = 149597870700
+    if user_input[8]: # Bool which indicates if z-component is disabled
+        dim=2
+    else:
+        dim=3
     try:
         planet_info["name"] = user_input[0]
         planet_info["mass"] = np.float(user_input[1])
-        planet_info["r_init"] = [
-                np.float(user_input[2]),
-                np.float(user_input[3]),
-                np.float(user_input[4])]
-        planet_info["v_init"] = [
+        planet_info["r_init"] = np.array([[
+                np.float(user_input[2])*AU,
+                np.float(user_input[3])*AU,
+                np.float(user_input[4])*AU][:dim]])
+        planet_info["v_init"] = np.array([[
                 np.float(user_input[5]),
                 np.float(user_input[6]),
-                np.float(user_input[7])]
+                np.float(user_input[7])][:dim]])
         planet_info["color"] = re.search("#[0-F]{6}", user_input[8]).group(0)
 
         return planet_info
@@ -332,75 +347,27 @@ def transform_user_planet_input(user_input):
 def update_initials_from_json(bodies):
     """ Gets triggered if a user changes the dropdown for the planets.
 
-    Initializes the ./user_current.json file if not already existing and reads initials
-    Also updates when new planet is added, as this also drops the dropdown menu.
+    Updates ./user_initials.json when new planet is added and load new initials.
     """
     global INITIALS
 
-    ####
-    # Save into ./user_current.json
-    ####
-    if not os.path.exists("./user_current.json"): #Initializes ./user_current.json
-        copyfile("./user_initials.json", "./user_current.json")
-        INITIALS = BaseSolver.read_initials_from_json("./user_current.json")
-    else:
-        updated_current = {}
-        print("SHOULD HER, \n\n\n", INITIALS)
-        for i, body in enumerate(INITIALS["names"]):
-            updated_current[body] = {
-                    "mass": INITIALS["masses"][i],
-                    "r_init": list(INITIALS["r_init"][i].astype(float)),
-                    "v_init": list(INITIALS["v_init"][i].astype(float)),
-                    "color": INITIALS["colors"][i]
-                    }
-        updated_current = json.dumps(updated_current)
-        with open("./user_current.json", "w") as f:
-            f.write(updated_current)
-
-        ####
-        # Save into ./user_initials.json
-        ####
-        with open("./user_current.json", "r") as f:
-            user_initial = json.load(f)
-        for body in bodies:
-            if body not in user_initial:
-                user_initial[body] = {
-                    "mass": updated_current[body]["mass"],
-                    "r_init": updated_current[body]["r_init"],
-                    "v_init": updated_current[body]["v_init"],
-                    "color": updated_current[body]["color"]
-                    }
-        updated_initials = json.dumps(user_initial)
-        with open("./user_initials.json", "w") as f:
-            f.write(updated_initials)
-
-        INITIALS = BaseSolver.read_initials_from_json("./user_current.json")
-
-    ####
-    # Update initials for dropped planets
-    ####
-    to_delete = []
-    for i, selected_body in enumerate(INITIALS["names"]):
-        if selected_body not in bodies:
-            to_delete.append(i)
-
-    INITIALS["names"] = np.delete(INITIALS["names"], i)
-    INITIALS["masses"] = np.delete(INITIALS["masses"], i)
-    INITIALS["r_init"] = np.delete(INITIALS["r_init"], i)
-    INITIALS["v_init"] = np.delete(INITIALS["v_init"], i)
-    INITIALS["colors"] = np.delete(INITIALS["colors"], i)
+    INITIALS = BaseSolver.read_initials_from_json(INITIALFILE, bodies)
+    INITIALS["scaled_sizes"] = INITIALS["sizes"]+10
+    R_MAX_INIT = np.max(INITIALS["r_init"])
+    R_MAX = 1.05 * R_MAX_INIT
 
 
 @app.callback(
         Output("graph-update", "interval"),
         [Input("start_stop", "n_clicks"), Input("reset", "n_clicks")],
-        [State("graph-update", "interval"), State("Solver", "values")]
+        [State("graph-update", "interval"), State("Solver", "values"),
+        State("dd_planets", "value")]
         )
-def control_Animation(start_clicks, reset_clicks, interval, chosen_solver):
+def control_Animation(start_clicks, reset_clicks, interval, ode_solvers, bodies):
     """ Starts the interval-event (internal clock) if Start Button is pressed,
     else stops the timer if the Stop or Reset Buttons are pressed.
 
-    Also if the Reset button is pressed new initial values get read from ./user_current.json
+    Also if the Reset button is pressed new initial values get read from ./user_initials.json
     and all solvers are newly initialized.
 
     The stopping is implemented as setting the interval time to 1e8 millisecond. Else
@@ -412,26 +379,12 @@ def control_Animation(start_clicks, reset_clicks, interval, chosen_solver):
     # Start or Stop Buttons are pressed
     if start_clicks is not None:
         CLICKS_START = start_clicks # Increase counter for Start/Stop button
-        interval = 200 if interval==1e8 else 1e8 # Kill timer by setting it to 1e8
+        interval = 100 if interval==1e8 else 1e8 # Kill timer by setting it to 1e8
 
     # Reset button was clicked
     elif reset_clicks is not None and CLICKS_RESET-reset_clicks:
         CLICKS_RESET = reset_clicks # Increase counter for Reset button
-        INITIALS = BaseSolver.read_initials_from_json("./user_current.json")
-        R_MAX = np.max(INITIALS["r_init"])
-        R_MAX = 1.05 * R_MAX # Increase plot margin a little bit on all sides
-
-        # Serves as initial scale. If R_MAX gets bigger the planets get smaller
-        # (ZOOM OUT effect)
-        R_MAX_INIT = R_MAX
-
-        # Initialize solver
-        solverdict = {
-                "LF": N_Body_Gravitation_LF,
-                "RK2": N_Body_Gravitation_RK2,
-                "RK4": N_Body_Gravitation_RK4
-                }
-        SOLVER = {s: solverdict[s](DT, INITIALS, verbose=False) for s in chosen_solver}
+        initialize_globals_and_parameters(bodies, ode_solvers)
         interval= 1e8
 
     return interval
@@ -440,18 +393,20 @@ def control_Animation(start_clicks, reset_clicks, interval, chosen_solver):
 @app.callback(
         Output("graphs", "children"),
         [Input("dd_planets", "value"), Input("sun_mass", "value"),
-        Input("timestep", "value"), Input("drag", "value"), Input("reset", "n_clicks")],
+        Input("timestep", "value"), Input("drag", "value"), Input("reset", "n_clicks"),
+        Input("xpos", "value"), Input("ypos", "value")],
         [State("start_stop", "n_clicks"), State("Solver", "values")],
         events=[Event("graph-update", "interval")]
         )
-def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_start, ode_solvers):
+def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
+                    n_clicks_start, ode_solvers):
     """ Tells the graph how to update depending on the input.
 
     Following global variables are read:
         # Information
         - CLICKS_START : counter of clicks used to determine if the start button was clicked
         - SOLVER : dictionary of selected solver objects
-        - INITIALS : dictionary from the ./user_current.json files with the current bodies
+        - INITIALS : dictionary from the ./user_initials.json files with the current bodies
         - RUNNING : Indicates wheter the simulation is running or stopped
         # Safety
         - GRAPHS : Used if the new graphs object files for some reason, last working graph
@@ -469,18 +424,21 @@ def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_st
 
     try:
         VALID_DRAG = int(drag)
+        DT = float(dt)
     except (ValueError, TypeError):
         pass
+
+
 
     # Start Button was clicked at least once, already initialised solvers,...
     if CLICKS_START != 0:
         if RUNNING: #animate
             for solver in ode_solvers:
-                results  = SOLVER[solver].evolve(steps=1, saveOnly=VALID_DRAG, mass_sun=sun_mass)
+                results  = SOLVER[solver].evolve(steps=1, saveOnly=VALID_DRAG, mass_sun=sun_mass, dt=DT)
                 positions = np.array(results[0])
                 # velocities = results[1]
-                # forces = results[2]
-                energies = np.abs(np.array(results[3]).sum(axis=1))
+                # forces = np.array(results[2])
+                energies = np.abs(np.array(results[3]).sum(axis=0))
                 timesteps = results[4]
 
                 # Rescale length scale if necessary
@@ -499,19 +457,7 @@ def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_st
 
     # Not initialised in the beginning, do this now for the first time
     else:
-        INITIALS = BaseSolver.read_initials_from_json("./user_current.json")
-        print("From here\n\n\n", INITIALS)
-        R_MAX_INIT = np.max(INITIALS["r_init"])
-        R_MAX = R_MAX_INIT
-        R_MAX = 1.05 * R_MAX_INIT
-        SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
-        positions = np.array([INITIALS["r_init"]])
-        days = 0
-        years = 0
-        timesteps= [0]
-        energies = [0]
-        INITIALS["scaled_sizes"] = INITIALS["sizes"]
-        ENERGY_MAX = 0
+        positions, days, years, timesteps, energies = initialize_globals_and_parameters(planets, ode_solvers)
 
     if n_clicks_reset is not None:
         reset_clicked = bool(n_clicks_reset - CLICKS_RESET)
@@ -519,44 +465,46 @@ def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_st
         reset_clicked = False
 
     if reset_clicked:
-        print("RESET")
-        R_MAX_INIT = np.max(INITIALS["r_init"])
-        R_MAX = R_MAX_INIT
-        R_MAX = 1.05 * R_MAX_INIT
-        SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
-        positions = np.array([INITIALS["r_init"]])
-        days = 0
-        years = 0
-        timesteps= [0]
-        energies = [0]
-        INITIALS["scaled_sizes"] = INITIALS["sizes"]
-        ENERGY_MAX = 0
+        positions, days, years, timesteps, energies  = initialize_globals_and_parameters(planets, ode_solvers)
 
     # Update graphs with next points
     if RUNNING or CLICKS_START==0 or reset_clicked:
         traj_data = []
         energ_data = []
-        print("from there\n\n", INITIALS)
+
+        # Create position and force data per body
         for i, name in enumerate(INITIALS["names"]):
-            traj_data.append(go.Scatter(
-                x = positions[:, i, 0],
-                y = positions[:, i, 1],
-                name = name,
-                marker = {
-                    "size": INITIALS["scaled_sizes"][i],
-                    "color": INITIALS["colors"][i]
-                    }
-                ))
+            if name == "sun":
+                traj_data.append(go.Scatter(
+                    x = positions[:, i, 0],
+                    y = positions[:, i, 1],
+                    name = name,
+                    mode = "markers",
+                    marker = {
+                        "size": INITIALS["scaled_sizes"][i],
+                        "color": INITIALS["colors"][i],
+                        }
+                    ))
+            else:
+                traj_data.append(go.Scatter(
+                    x = positions[:, i, 0],
+                    y = positions[:, i, 1],
+                    name = name,
+                    marker = {
+                        "size": INITIALS["scaled_sizes"][i],
+                        "color": INITIALS["colors"][i],
+                        }
+                    ))
 
         if np.max(energies) > ENERGY_MAX:
             ENERGY_MAX = np.max(energies)
 
+        # Create energy data
         energ_data.append(go.Bar(
             x = [0],
             y = [energies[-1]],
             name = "LF",
             ))
-
 
         planet_trajectories = html.Div(dcc.Graph(
                 id="trajectories",
@@ -609,12 +557,83 @@ def update_graphs(planets, sun_mass, timestep, drag, n_clicks_reset, n_clicks_st
                     className="row"
                 )
 
+    # Update customized planet position preview
+    try:
+        AU = 149597870700
+        xpos = [float(xpos)*AU]
+        ypos = [float(ypos)*AU]
+        preview = go.Scatter(
+            x=xpos, y=ypos,
+            marker={
+                "color": "#ff0000",
+                "symbol": "cross",
+                "size": 10,},
+            name="preview")
+
+        scatterplots = GRAPHS.__dict__["children"][0].__dict__["children"].__dict__["figure"]["data"]
+        for i, scatter in enumerate(scatterplots):
+            if scatter.__dict__["_orphan_props"]["name"] == "preview":
+                scatterplots[i] = preview
+                break
+        else:
+            scatterplots.append(preview)
+    except (ValueError, TypeError):
+        pass
+
     return GRAPHS
+
 
 def transform_sun_mass(sun_mass_scale):
     """ Transforms sun mass given on logarithmic scale to kg
     """
     return M_SUN  * 10**sun_mass_scale
+
+
+def initialize_globals_and_parameters(selected_bodies, solvers):
+    global INITIALS, R_MAX_INIT, R_MAX, SOLVER, ENERGY_MAX
+
+    INITIALS = BaseSolver.read_initials_from_json(INITIALFILE, selected_bodies)
+
+    R_MAX_INIT = np.max(INITIALS["r_init"])
+    R_MAX = 1.05 * R_MAX_INIT
+    SOLVER = {}
+    for s in solvers:
+        if s == "LF":
+            ode_solver = N_Body_Gravitation_LF(DT, INITIALS, verbose=False)
+        elif s == "RK2":
+            ode_solver = N_Body_Gravitation_RK2(DT, INITIALS, verbose=False)
+        else:
+            ode_solver = N_Body_Gravitation_RK4(DT, INITIALS, verbose=False)
+
+        SOLVER[s] = ode_solver
+
+    INITIALS["scaled_sizes"] = INITIALS["sizes"]
+
+    positions = np.array([INITIALS["r_init"]])
+    days = years = ENERGY_MAX = 0
+    timesteps = energies = [0]
+
+    return positions, days, years, timesteps, energies
+
+
+####
+# Deactivate z coordiante if not present in initial conditions
+####
+@app.callback(Output("zpos", "disabled"),
+        [Input("dd_planets", "value"), Input("reset", "n_clicks")])
+def disable_z_coordinate(value, clicks):
+    if INITIALS!=0 and INITIALS["r_init"].shape[1] < 3:
+        return True
+    else:
+        False
+
+@app.callback(Output("zvel", "disabled"),
+        [Input("dd_planets", "value"), Input("reset", "n_clicks")])
+def disable_z_coordinate(value, clicks):
+    if INITIALS!=0 and INITIALS["r_init"].shape[1] < 3:
+        return True
+    else:
+        False
 
 
 external_css = [
@@ -628,50 +647,6 @@ for js in external_css:
     app.scripts.append_script({'external_url': js})
 
 
-        # INITIALS = BaseSolver.read_initials_from_json("./user_current.json")
-        # print("From here\n\n\n", INITIALS)
-        # R_MAX_INIT = np.max(INITIALS["r_init"])
-        # R_MAX = R_MAX_INIT
-        # R_MAX = 1.05 * R_MAX_INIT
-        # SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
-        # positions = np.array([INITIALS["r_init"]])
-        # days = 0
-        # years = 0
-        # timesteps= [0]
-        # energies = [0]
-        # INITIALS["scaled_sizes"] = INITIALS["sizes"]
-        # ENERGY_MAX = 0
-
-        # print("RESET")
-        # R_MAX_INIT = np.max(INITIALS["r_init"])
-        # R_MAX = R_MAX_INIT
-        # R_MAX = 1.05 * R_MAX_INIT
-        # SOLVER = {"LF": N_Body_Gravitation_LF(DT, INITIALS, verbose=False)}
-        # positions = np.array([INITIALS["r_init"]])
-        # days = 0
-        # years = 0
-        # timesteps= [0]
-        # energies = [0]
-        # INITIALS["scaled_sizes"] = INITIALS["sizes"]
-        # ENERGY_MAX = 0
-
-
-
-        # updated_current = {}
-        # print("SHOULD HER, \n\n\n", INITIALS)
-        # for i, body in enumerate(INITIALS["names"]):
-        #     updated_current[body] = {
-        #             "mass": INITIALS["masses"][i],
-        #             "r_init": list(INITIALS["r_init"][i].astype(float)),
-        #             "v_init": list(INITIALS["v_init"][i].astype(float)),
-        #             "color": INITIALS["colors"][i]
-        #             }
-        # updated_current = json.dumps(updated_current)
-        # with open("./user_current.json", "w") as f:
-        #     f.write(updated_current)
-
-
-        # INITIALS = BaseSolver.read_initials_from_json("./user_current.json")
 if __name__ == "__main__":
     app.server.run(debug=True)
 
