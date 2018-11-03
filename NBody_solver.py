@@ -88,7 +88,6 @@ class N_Body_Gravitationsolver():
 
         with open(filepath, "r") as f:
             initials = json.load(f)
-
         names = []; masses = []; r_init = []; v_init = []; colors = []; sizes =[]
 
         if selected_bodies is None:
@@ -447,7 +446,7 @@ class N_Body_Gravitationsolver():
                         label=self.names[i]
                         )
             else:
-                lwidths = self.sizes[i] * 3
+                lwidths = self.sizes[i] - 5
                 ax_trajectories.plot(xs, ys,
                         color=self.colors[i],
                         linewidth=lwidths,

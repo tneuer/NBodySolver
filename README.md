@@ -43,7 +43,7 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
 * Variable drag
 * Variable mass of central star
-* Automaggtic recognition of unused dimensions
+* Automatic recognition of unused dimensions
 
 
 
@@ -83,7 +83,6 @@ For the Dash simulation
 - ~~planets get smaller with bigger scale~~
 - ~~refactor with Superclass ODESOLVER~~
 - Comparison to true values in sun-earth system --> error calculation
-- Focus coordinatesystem on heaviest object
 - Different Solver in one plot or all in different
 - ~~Timestep input~~
 - ~~Automatic update to two body dimension~~

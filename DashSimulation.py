@@ -4,7 +4,7 @@
     # Author : Thomas Neuer (tneuer)
     # File Name : DashComparison.py
     # Creation Date : Mon 29 Okt 2018 15:20:38 CET
-    # Last Modified : Fre 02 Nov 2018 02:24:20 CET
+    # Last Modified : Fre 02 Nov 2018 02:33:01 CET
     # Description : Compares the results of the NBodySolvers for comparison.
 """
 #==============================================================================
@@ -117,7 +117,8 @@ app.layout = html.Div([
                     ],
                     className="three columns"),
                 ],
-                className="row")
+                className="row"),
+            html.Div(id="Planetmessage")
             ],
             className="four columns"),
         ],
@@ -634,6 +635,11 @@ def disable_z_coordinate(value, clicks):
         return True
     else:
         False
+
+
+####
+# Planet help message
+####
 
 
 external_css = [
