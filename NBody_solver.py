@@ -109,21 +109,17 @@ class N_Body_Gravitationsolver():
         null_dim_space = np.array(r_init).sum(axis=0)==0
         null_dim_veloc = np.array(v_init).sum(axis=0)==0
 
-        null_dim = np.equal(null_dim_space, null_dim_veloc)
+        null_dim = np.logical_and(null_dim_space, null_dim_veloc)
 
         if np.any(null_dim):
             r_init = np.array(r_init)[:, ~null_dim]
             v_init = np.array(v_init)[:, ~null_dim]
 
-        return  {
-                "r_init": r_init,
-                "v_init": v_init,
-                "masses": masses,
-                "colors": colors,
-                "sizes": sizes,
-                "names": names
-                }
+        initials =  dict(r_init=r_init, v_init=v_init, masses=masses, colors=colors, sizes=sizes, names=names)
 
+        print("asdad\n\n")
+        print(initials)
+        return initials
 
     def evolve(self, steps=None, t_end=None, saveOnly=None, mass_sun=None, dt=None):
         """ Evolves the system according to the potential.
