@@ -11,10 +11,9 @@
 
 import os
 import re
-import time
 import dash
 import json
-import random
+import plotly
 
 import numpy as np
 import plotly.graph_objs as go
@@ -136,7 +135,7 @@ app.layout = html.Div([
                 {"label": "Runge-Kutta 2", "value": "RK2"},
                 {"label": "Runge-Kutta 4", "value": "RK4"},
                 ],
-            values = ["LF"],
+            values = ["LF", "RK2"],
             labelStyle= {
                 "display": "inline-block",
                 "width": "200px",
@@ -194,7 +193,7 @@ app.layout = html.Div([
         ],
         className="row",
         style={
-            "marginTop": "15px"
+            "marginTop": "100px"
             }),
 
     html.Div(id="Trash1") # Pseudooutput from update_initials_from_json callback()
@@ -380,7 +379,7 @@ def control_Animation(start_clicks, reset_clicks, interval, ode_solvers, bodies)
     # Start or Stop Buttons are pressed
     if start_clicks is not None:
         CLICKS_START = start_clicks # Increase counter for Start/Stop button
-        interval = 100 if interval==1e8 else 1e8 # Kill timer by setting it to 1e8
+        interval = 300 if interval==1e8 else 1e8 # Kill timer by setting it to 1e8
 
     # Reset button was clicked
     elif reset_clicks is not None and CLICKS_RESET-reset_clicks:
@@ -417,7 +416,7 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
         - R_MAX_INIT : Used as a scale for bodysize, if R_MAX gets bigger the bodies get smaller (ZOOM)
         - ENERGY_MAX : Used for scaling the energy plot
     """
-    global CLICKS_START, SOLVER, INITIALS, RUNNING
+    global CLICKS_START, SOLVER, INITIALS, RUNNING, timesteps, CURRENT_BODIES
     global GRAPHS, VALID_DRAG
     global R_MAX, R_MAX_INIT, ENERGY_MAX
     sun_mass = transform_sun_mass(sun_mass)
@@ -429,18 +428,21 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
     except (ValueError, TypeError):
         pass
 
-
+    positions = []
+    energies = []
+    symbols = ["circle", "star", "diamond-x"]
+    colors = plotly.colors.DEFAULT_PLOTLY_COLORS[:3]
 
     # Start Button was clicked at least once, already initialised solvers,...
     if CLICKS_START != 0:
         if RUNNING: #animate
-            for solver in ode_solvers:
+            for i, solver in enumerate(SOLVER):
                 results  = SOLVER[solver].evolve(steps=1, saveOnly=VALID_DRAG, mass_sun=sun_mass, dt=DT)
-                positions = np.array(results[0])
+                positions.append(np.array(results[0]))
                 # velocities = results[1]
                 # forces = np.array(results[2])
-                energies = np.abs(np.array(results[3]).sum(axis=0))
-                timesteps = results[4]
+                energies.append(np.abs(np.array(results[3]).sum(axis=0)))
+                timesteps = np.array(results[4])
 
                 # Rescale length scale if necessary
                 # 1) General x and y-axis limits
@@ -450,7 +452,7 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
                     R_MAX = max_pos
                     R_MAX = 1.05 * R_MAX
                 scale_for_escaping = R_MAX_INIT / R_MAX
-                INITIALS["scaled_sizes"] = INITIALS["sizes"] * scale_for_escaping
+                CURRENT_BODIES["scaled_sizes"] = CURRENT_BODIES["sizes"] * scale_for_escaping
 
                 # Convert current timestep
                 days = np.round(timesteps[-1]/(3600 * 24), 2)
@@ -459,6 +461,7 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
     # Not initialised in the beginning, do this now for the first time
     else:
         positions, days, years, timesteps, energies = initialize_globals_and_parameters(planets, ode_solvers)
+        CURRENT_BODIES = INITIALS
 
     if n_clicks_reset is not None:
         reset_clicked = bool(n_clicks_reset - CLICKS_RESET)
@@ -467,45 +470,71 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
 
     if reset_clicked:
         positions, days, years, timesteps, energies  = initialize_globals_and_parameters(planets, ode_solvers)
+        CURRENT_BODIES = INITIALS
 
     # Update graphs with next points
     if RUNNING or CLICKS_START==0 or reset_clicked:
         traj_data = []
         energ_data = []
-
-        # Create position and force data per body
-        for i, name in enumerate(INITIALS["names"]):
-            if name == "sun":
-                traj_data.append(go.Scatter(
-                    x = positions[:, i, 0],
-                    y = positions[:, i, 1],
-                    name = name,
-                    mode = "markers",
-                    marker = {
-                        "size": INITIALS["scaled_sizes"][i],
-                        "color": INITIALS["colors"][i],
-                        }
-                    ))
-            else:
-                traj_data.append(go.Scatter(
-                    x = positions[:, i, 0],
-                    y = positions[:, i, 1],
-                    name = name,
-                    marker = {
-                        "size": INITIALS["scaled_sizes"][i],
-                        "color": INITIALS["colors"][i],
-                        }
-                    ))
+        positions = np.array(positions)
+        energies = np.array(energies)
 
         if np.max(energies) > ENERGY_MAX:
-            ENERGY_MAX = np.max(energies)
+            ENERGY_MAX = np.max(energies) * 1.1
 
-        # Create energy data
-        energ_data.append(go.Bar(
-            x = [0],
-            y = [energies[-1]],
-            name = "LF",
-            ))
+        # Create position and force data per body
+        for i in range(len(positions[0, 0])):
+            name = CURRENT_BODIES["names"][i]
+            for s in range(len(positions)):
+                if name == "sun" and s==0:
+                    traj_data.append(go.Scatter(
+                        x = positions[s, :, i, 0],
+                        y = positions[s, :, i, 1],
+                        name = name,
+                        mode = "markers",
+                        marker = {
+                            "size": CURRENT_BODIES["scaled_sizes"][i],
+                            "color": CURRENT_BODIES["colors"][i],
+                            "symbol": symbols[s]
+                            }
+                        ))
+                else:
+                    traj_data.append(go.Scatter(
+                        x = positions[s, :, i, 0],
+                        y = positions[s, :, i, 1],
+                        name = name+list(SOLVER.keys())[s],
+                        mode="markers+lines",
+                        marker = {
+                            "size": CURRENT_BODIES["scaled_sizes"][i],
+                            "color": CURRENT_BODIES["colors"][i],
+                            "symbol": symbols[s]
+                            }
+                        ))
+
+
+                # Create energy data
+                if i == 0:
+                    if len(timesteps) < 10:
+                        energ_data.append(go.Bar(
+                            x = [s],
+                            y = [energies[s, -1]],
+                            name = list(SOLVER.keys())[s]
+                        ))
+                        xlimits = (0, 3)
+                    else:
+                        energ_data.append(go.Scatter(
+                            x = timesteps,
+                            y = energies[s],
+                            name = list(SOLVER.keys())[s],
+                            mode="markers",
+                            marker={
+                                "size": 10,
+                                "color": colors[s],
+                                "opacity": 0.7
+                            }
+                            ))
+                        xlimits = (min(timesteps), max(timesteps))
+
 
         planet_trajectories = html.Div(dcc.Graph(
                 id="trajectories",
@@ -541,13 +570,13 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
                     'data': energ_data,
                     'layout' : go.Layout(
                         xaxis=dict(
-                            range=(0, 3),
+                            range=xlimits,
                             ),
                         yaxis=dict(
                             range=(0, ENERGY_MAX),
                             ),
-                        margin={'l':50,'r':1,'t':45,'b':1},
-                        title='Energies')
+                        margin={'l':50,'r':1,'t':45,'b':15},
+                        title='Energies (absolute value)')
                 }
                 ), className="four columns")
 
@@ -610,9 +639,9 @@ def initialize_globals_and_parameters(selected_bodies, solvers):
 
     INITIALS["scaled_sizes"] = INITIALS["sizes"]
 
-    positions = np.array([INITIALS["r_init"]])
+    positions = [np.array([INITIALS["r_init"]])]
     days = years = ENERGY_MAX = 0
-    timesteps = energies = [0]
+    timesteps = energies = np.array([[0]])
 
     return positions, days, years, timesteps, energies
 
@@ -640,6 +669,7 @@ def disable_z_coordinate(value, clicks):
 ####
 # Planet help message
 ####
+
 
 
 external_css = [

@@ -44,6 +44,7 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 * Variable drag
 * Variable mass of central star
 * Automatic recognition of unused dimensions
+* Third dimension input is closed if all default planets have no z-entries
 
 
 

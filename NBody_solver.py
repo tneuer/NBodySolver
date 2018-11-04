@@ -117,8 +117,6 @@ class N_Body_Gravitationsolver():
 
         initials =  dict(r_init=r_init, v_init=v_init, masses=masses, colors=colors, sizes=sizes, names=names)
 
-        print("asdad\n\n")
-        print(initials)
         return initials
 
     def evolve(self, steps=None, t_end=None, saveOnly=None, mass_sun=None, dt=None):
