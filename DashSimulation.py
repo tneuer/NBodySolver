@@ -76,6 +76,7 @@ app.layout = html.Div([
                 multi=True,
                 style={"marginTop": "50px"}
                 )),
+            html.Div(id="resetmessage", style={"textColor": "#FF0000"})
             ],
             className="eight columns"),
 
@@ -667,9 +668,39 @@ def disable_z_coordinate(value, clicks):
 
 
 ####
-# Planet help message
+# Reset help message
 ####
 
+@app.callback(Output("resetmessage", "children"),
+              [Input("Solver", "values"), Input("dd_planets", "value"),
+               Input("AddPlanet", "n_clicks"), Input("reset", "n_clicks")])
+def update_reset_message(solvers, bodies, adder, reset_clicks):
+
+    if reset_clicks is not None:
+        reset_clicked = bool(reset_clicks - CLICKS_RESET)
+    else:
+        reset_clicked = False
+
+    if reset_clicked:
+        return html.Div(children="All good to go.", style={"color": "#00FF00", "fontSize": 11})
+
+    else:
+        return html.Div(children="Press reset to properly update the graph.", style={"color": "#FF0000", "fontsize": 20})
+
+####
+# Add planet help message
+####
+
+@app.callback(Output("Planetmessage", "children"),
+              [Input("dd_planets", "value"), Input("AddPlanet", "n_clicks")])
+def update_reset_message(bodies, adder):
+    body_added = True
+
+    if body_added:
+        return html.Div(children="Body successfully added.", style={"color": "#00FF00", "fontSize": 11})
+
+    else:
+        return html.Div(children="Some body input was wrong.", style={"color": "#FF0000", "fontsize": 20})
 
 
 external_css = [

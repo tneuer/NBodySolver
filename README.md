@@ -39,12 +39,16 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
 
 
+* The DashSimulation.py implements a high level simulation of the N-Body system. It is based on the Dash library so it needs to be installed like describe in the dependencies below. Dash runs the application in the webbrowser, similar to Java.
+
+  In this application user-defined bodies can be entered, the step size, the sun mass and the drag of every body can be changed dynamically.
+
 #### Features
 
 * Variable drag
 * Variable mass of central star
 * Automatic recognition of unused dimensions
-* Third dimension input is closed if all default planets have no z-entries
+  * Third dimension input is closed if all default planets have no z-entries
 
 
 
@@ -56,7 +60,7 @@ For the normal solvers:
 
 ```bash
 # Color package
->> pip install color
+>> pip install json
 ```
 
 
@@ -84,7 +88,7 @@ For the Dash simulation
 - ~~planets get smaller with bigger scale~~
 - ~~refactor with Superclass ODESOLVER~~
 - Comparison to true values in sun-earth system --> error calculation
-- Different Solver in one plot or all in different
+- ~~Different Solver in one plot or all in different~~
 - ~~Timestep input~~
 - ~~Automatic update to two body dimension~~
 - ~~show planet position before adding~~
