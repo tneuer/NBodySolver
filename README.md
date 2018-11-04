@@ -43,6 +43,8 @@ This is a full set of solvers for the gravitational N-Body problems, solved for 
 
   In this application user-defined bodies can be entered, the step size, the sun mass and the drag of every body can be changed dynamically.
 
+  ![Dash](https://raw.githubusercontent.com/tneuer/NBodySolver/master/Figures/PreviewDash.png)
+
 #### Features
 
 * Variable drag
@@ -70,7 +72,7 @@ For the Dash simulation
 - Dash
 
 ``` bash
-# Dash (from https://dash.plot.ly/installation)
+# Dash (from https://dash.plot.ly/installation, 2018/10/04)
 >> pip install dash==0.28.5  # The core dash backend
 >> pip install dash-html-components==0.13.2  # HTML components
 >> pip install dash-core-components==0.35.1  # Supercharged components
@@ -93,6 +95,7 @@ For the Dash simulation
 - ~~Automatic update to two body dimension~~
 - ~~show planet position before adding~~
 - draw every quarter year where earth should be
-- Restart message 
+- ~~Restart message~~
 - body error message
-- No fail if body is added during runtime
+- ~~No fail if body is added during runtime~~
+- Body collision
