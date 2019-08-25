@@ -42,6 +42,7 @@ CLICKS_RESET = 0
 M_SUN = 1.98892e30
 INITIALFILE = "./user_initials.json"
 DEFAULTPLANETS = ["sun", "earth", "venus", "mercury"]
+INTERVAL = 100
 ####
 # Construct a copy of the initial file, where user planets are appended
 ####
@@ -380,7 +381,7 @@ def control_Animation(start_clicks, reset_clicks, interval, ode_solvers, bodies)
     # Start or Stop Buttons are pressed
     if start_clicks is not None:
         CLICKS_START = start_clicks # Increase counter for Start/Stop button
-        interval = 300 if interval==1e8 else 1e8 # Kill timer by setting it to 1e8
+        interval = INTERVAL if interval==1e8 else 1e8 # Kill timer by setting it to 1e8
 
     # Reset button was clicked
     elif reset_clicks is not None and CLICKS_RESET-reset_clicks:
@@ -418,15 +419,15 @@ def update_graphs(planets, sun_mass, dt, drag, n_clicks_reset, xpos, ypos,
         - ENERGY_MAX : Used for scaling the energy plot
     """
     global CLICKS_START, SOLVER, INITIALS, RUNNING, timesteps, CURRENT_BODIES
-    global GRAPHS, VALID_DRAG
+    global GRAPHS, VALID_DRAG, DT
     global R_MAX, R_MAX_INIT, ENERGY_MAX
     sun_mass = transform_sun_mass(sun_mass)
     graphs = []
 
     try:
         VALID_DRAG = int(drag)
-        DT = float(dt)
-    except (ValueError, TypeError):
+        DT = float(eval(dt))
+    except (ValueError, TypeError, SyntaxError):
         pass
 
     positions = []
